@@ -22,6 +22,19 @@ export default function GroceryList() {
     localStorage.setItem('grocery', JSON.stringify(items))
   }, [items])
 
+  // listen for external grocery updates (e.g. from MealPlanner)
+  useEffect(() => {
+    const h = () => {
+      try {
+        setItems(JSON.parse(localStorage.getItem('grocery') || '[]'))
+      } catch {
+        // ignore
+      }
+    }
+    window.addEventListener('grocery-updated', h)
+    return () => window.removeEventListener('grocery-updated', h)
+  }, [])
+
   function add() {
     if (!newItem) return
     setItems((s) => [...s, { id: Date.now().toString(), name: newItem, category }])
@@ -129,7 +142,13 @@ export default function GroceryList() {
               const meals = JSON.parse(localStorage.getItem('meals')||'[]')
               meals.push({ id: Date.now().toString(), date, title: recipeDetails.title, groceries: (recipeDetails.extendedIngredients||[]).map((i:any)=>i.name) })
               localStorage.setItem('meals', JSON.stringify(meals))
-              alert('Added recipe to meals and groceries')
+                // also add ingredients to grocery list and notify listeners
+                const ings = (recipeDetails.extendedIngredients||[]).map((i:any, idx:number) => ({ id: Date.now().toString() + idx, name: i.name, category: 'From Recipe' }))
+                setItems(s => s.concat(ings))
+                // dispatch events so other components update
+                window.dispatchEvent(new CustomEvent('meals-updated'))
+                window.dispatchEvent(new CustomEvent('grocery-updated'))
+                alert('Added recipe to meals and grocery list')
             }}>Add to Meal</button>
             <button onClick={() => { setSelectedRecipe(null); setRecipeDetails(null) }}>Close</button>
           </div>

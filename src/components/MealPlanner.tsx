@@ -19,6 +19,8 @@ export default function MealPlanner({ selectedDate }: { selectedDate?: string | 
 
   useEffect(() => {
     localStorage.setItem('meals', JSON.stringify(meals))
+    // notify listeners
+    window.dispatchEvent(new CustomEvent('meals-updated'))
   }, [meals])
 
   function addMeal() {
@@ -50,8 +52,11 @@ export default function MealPlanner({ selectedDate }: { selectedDate?: string | 
             <button onClick={() => {
               const groceries = m.groceries || []
               const existing = JSON.parse(localStorage.getItem('grocery') || '[]')
-              const merged = existing.concat(groceries.map((g: string) => ({ id: Date.now().toString() + Math.random(), name: g, category: 'From Meal' })))
+              const now = Date.now().toString()
+              const merged = existing.concat(groceries.map((g: string, i:number) => ({ id: now + i, name: g, category: 'From Meal' })))
               localStorage.setItem('grocery', JSON.stringify(merged))
+              // notify grocery listeners
+              window.dispatchEvent(new CustomEvent('grocery-updated'))
               alert('Added meal groceries to grocery list')
             }}>Add groceries</button>
           </div>

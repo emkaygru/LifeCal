@@ -59,6 +59,13 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
     if (selectedKey) setSelectedDate(new Date(selectedKey))
   }, [selectedKey])
 
+  // refresh when meals change elsewhere
+  useEffect(() => {
+    const h = () => { /* trigger re-render by updating state */ setEvents((e) => [...e]) }
+    window.addEventListener('meals-updated', h)
+    return () => window.removeEventListener('meals-updated', h)
+  }, [])
+
   const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
   const daysInMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate()
 
