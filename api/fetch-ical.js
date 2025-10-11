@@ -2,6 +2,23 @@ module.exports = async function handler(req, res) {
   // Emit immediate invocation info.
   try { console.error('[debug] fetch-ical invoked', { method: req.method, url: req.url, query: req.query && Object.keys(req.query) }); } catch (e) {}
 
+  // Super-early debug short-circuit: return raw request shape before any parsing.
+  try {
+    const qEarly = req.query || {}
+    if (qEarly.debug === '1' || qEarly.debug === 'true') {
+      const outEarly = {
+        rawRequestUrl: req.url,
+        query: qEarly,
+        headers: req.headers
+      }
+      res.setHeader('Content-Type', 'application/json; charset=utf-8')
+      res.status(200).send(JSON.stringify(outEarly, null, 2))
+      return
+    }
+  } catch (e) {
+    /* ignore */
+  }
+
   // Normalize and safely extract the 'url' param. It may be:
   // - req.query.url as a string
   // - req.query.url as an array (from repeated params)
