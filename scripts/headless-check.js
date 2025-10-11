@@ -48,7 +48,7 @@ async function run() {
   }
 
   // give time for lazy requests
-  await page.waitForTimeout(1000);
+  await new Promise((res) => setTimeout(res, 1000));
 
   await browser.close();
 
