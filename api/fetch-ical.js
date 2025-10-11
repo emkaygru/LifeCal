@@ -16,6 +16,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('X-Debug-Invoked', 'fetch-ical')
   res.send(text)
   } catch (err) {
-    res.status(500).send(String(err?.message || err))
+    try { console.error('[fetch-ical] error fetching', { err: err && err.stack ? err.stack : String(err), url: req.query && req.query.url }) } catch (e) {}
+    res.status(500).send('fetch failed')
   }
 }
