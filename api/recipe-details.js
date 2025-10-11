@@ -6,9 +6,10 @@ module.exports = async function handler(req, res) {
     if (!id || !key) return res.json({})
 
     const api = `https://api.spoonacular.com/recipes/${encodeURIComponent(id)}/information?includeNutrition=false&apiKey=${key}`
-    const upstream = await fetch(api)
-    const json = await upstream.json()
-    res.json(json)
+  const upstream = await fetch(api)
+  const json = await upstream.json()
+  res.setHeader('X-Debug-Invoked', 'recipe-details')
+  res.json(json)
   } catch (err) {
     res.status(500).json({ error: String(err) })
   }
