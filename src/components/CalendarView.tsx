@@ -24,14 +24,23 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   const [view, setView] = useState<'month'|'week'|'day'>('month')
   const [todosList, setTodosList] = useState<any[]>(getTodos())
 
+  // Fetch public calendar via the server proxy to avoid CORS errors.
   useEffect(() => {
     if (!PUBLIC_ICAL_URL) return
-    fetch(PUBLIC_ICAL_URL)
-      .then((r) => {
-        if (!r.ok) throw new Error('Fetch failed: ' + r.status)
-        return r.text()
-      })
-      .then((data) => {
+
+    const base64Encode = (s: string) => {
+      if (typeof window !== 'undefined' && window.btoa) return window.btoa(s)
+      try { return Buffer.from(s).toString('base64') } catch (_) { return '' }
+    }
+
+    const fetchCalendar = async () => {
+      try {
+        // base64 the URL and call our proxy which is same-origin
+        const b64 = base64Encode(PUBLIC_ICAL_URL)
+        const res = await fetch(`/api/fetch-ical?b64=${encodeURIComponent(b64)}`)
+        if (!res.ok) throw new Error('Fetch failed: ' + res.status)
+        const data = await res.text()
+
         try {
           const jcal = ICAL.parse(data)
           const comp = new ICAL.Component(jcal)
@@ -51,17 +60,20 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
           console.error('ical parse err', err)
           setFetchError('Failed to parse calendar data')
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('calendar fetch failed', err)
         setFetchError(String(err))
-      })
-  // listen to todos changes
+      }
+    }
+
+    fetchCalendar()
+  }, [])
+
+  // listen to todos changes (separate effect to avoid hook nesting)
   useEffect(() => {
     const h = () => setTodosList(getTodos())
     window.addEventListener('todos-updated', h)
     return () => window.removeEventListener('todos-updated', h)
-  }, [])
   }, [])
 
   useEffect(() => {
