@@ -7,71 +7,10 @@
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      // Intercept attempts to fetch the public iCloud published URL and route
-      // them through the same-origin proxy to avoid CORS and unexpected runtime
-      // errors when an older JS bundle is served.
-      (function(){
-        try {
-          const targetHost = 'p131-caldav.icloud.com';
-          const publishedPrefix = '/published/2/';
-          const origFetch = window.fetch && window.fetch.bind(window);
-          function base64Encode(s){ try{ return btoa(s) }catch(e){ return '' } }
-
-          if (origFetch) {
-            window.fetch = function(input, init){
-              try{
-                const url = (typeof input === 'string') ? input : (input && input.url) || '';
-                if (url && url.indexOf(targetHost) !== -1 && url.indexOf(publishedPrefix) !== -1) {
-                  const b64 = encodeURIComponent(base64Encode(url));
-                  return origFetch('/api/fetch-ical?b64=' + b64, { method: 'GET' });
-                }
-              }catch(e){ /* fall through to normal fetch on error */ }
-              return origFetch(input, init);
-            }
-          }
-
-          // Also patch XHR open/send to route requests through proxy when needed
-          try {
-            const XProto = window.XMLHttpRequest && window.XMLHttpRequest.prototype;
-            if (XProto && XProto.open) {
-              const origOpen = XProto.open;
-              const origSend = XProto.send;
-              XProto.open = function(method, url) {
-                this.__lc_original_url = url;
-                return origOpen.apply(this, arguments);
-              }
-              XProto.send = function(body) {
-                try {
-                  const url = this.__lc_original_url || '';
-                  if (url && url.indexOf(targetHost) !== -1 && url.indexOf(publishedPrefix) !== -1) {
-                    // perform a fetch to the proxy and dispatch events on the XHR
-                    const xhr = this;
-                    const b64 = encodeURIComponent(base64Encode(url));
-                    fetch('/api/fetch-ical?b64=' + b64).then(async (res) => {
-                      const text = await res.text();
-                      // emulate basic XHR load event by setting responseText and readyState
-                      try { Object.defineProperty(xhr, 'responseText', { value: text, writable: false }); } catch(e) {}
-                      xhr.status = res.status;
-                      xhr.readyState = 4;
-                      if (typeof xhr.onload === 'function') xhr.onload({ target: xhr });
-                      if (typeof xhr.onreadystatechange === 'function') xhr.onreadystatechange({ target: xhr });
-                    }).catch((e) => {
-                      if (typeof this.onerror === 'function') this.onerror(e);
-                    });
-                    return; // don't call original send
-                  }
-                } catch (e) {}
-                return origSend.apply(this, arguments);
-              }
-            }
-          } catch (e) {}
-
-        } catch (e) {
-          // silent
-        }
-      })();
-    </script>
+    <!-- Inline interceptor removed now that the client and server proxy are deployed.
+         This was a temporary safety-net to rewrite direct iCloud published URL
+         fetch/XHR calls to the same-origin proxy `/api/fetch-ical`. Removing it
+         cleans up the runtime footprint and prevents unexpected script-side behavior. -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
