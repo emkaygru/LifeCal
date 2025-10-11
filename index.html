@@ -7,6 +7,32 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Intercept attempts to fetch the public iCloud published URL and route
+      // them through the same-origin proxy to avoid CORS and unexpected runtime
+      // errors when an older JS bundle is served.
+      (function(){
+        try {
+          const targetHost = 'p131-caldav.icloud.com';
+          const publishedPrefix = '/published/2/';
+          const origFetch = window.fetch.bind(window);
+          function base64Encode(s){ try{ return btoa(s) }catch(e){ return '' } }
+          window.fetch = function(input, init){
+            try{
+              const url = (typeof input === 'string') ? input : (input && input.url) || '';
+              if (url && url.indexOf(targetHost) !== -1 && url.indexOf(publishedPrefix) !== -1) {
+                // route via our serverless proxy
+                const b64 = encodeURIComponent(base64Encode(url));
+                return origFetch('/api/fetch-ical?b64=' + b64, { method: 'GET' });
+              }
+            }catch(e){ /* fall through to normal fetch on error */ }
+            return origFetch(input, init);
+          }
+        } catch (e) {
+          // silent
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 
