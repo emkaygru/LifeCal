@@ -1,0 +1,31 @@
+name: Daily iCal proxy smoke check
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # every day at 12:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      # Set this in repository Secrets as DEPLOY_BASE_URL, e.g. https://your-deploy.vercel.app
+      DEPLOY_BASE_URL: ${{ secrets.DEPLOY_BASE_URL }}
+      # The published calendar path to test (base64 encoded to avoid leaking in logs)
+      TEST_B64: ${{ secrets.TEST_ICAL_B64 }}
+    steps:
+      - name: Check env
+        run: |
+          if [ -z "${DEPLOY_BASE_URL}" ]; then echo "DEPLOY_BASE_URL is not set (set repository secret DEPLOY_BASE_URL)"; exit 1; fi
+          if [ -z "${TEST_B64}" ]; then echo "TEST_ICAL_B64 is not set (set repository secret TEST_ICAL_B64)"; exit 1; fi
+
+      - name: Fetch calendar via proxy
+        run: |
+          set -euo pipefail
+          URL="${DEPLOY_BASE_URL}/api/fetch-ical?b64=${TEST_B64}"
+          echo "Checking $URL"
+          HTTP_STATUS=$(curl -s -w "%{http_code}" -o /tmp/ical.txt "$URL")
+          echo "HTTP status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" != "200" ]; then echo "Bad HTTP status: $HTTP_STATUS"; cat /tmp/ical.txt; exit 1; fi
+          if ! grep -q "BEGIN:VCALENDAR" /tmp/ical.txt; then echo "Response did not contain BEGIN:VCALENDAR"; sed -n '1,200p' /tmp/ical.txt; exit 1; fi
+          echo "Smoke check OK"

@@ -38,6 +38,24 @@ npm start
 
 Then in `CalendarView.tsx` you can replace the public URL usage with `http://localhost:4000/fetch-ical?url=${encodeURIComponent(YOUR_URL)}` so the server will proxy the iCal.
 
+Notes on fragile calendar URLs
+--------------------------------
+- If your calendar URL is being mangled by client-side encoding (some apps double-encode or contain characters that break query parsing), the proxy accepts two robust alternatives:
+	- POST JSON body: send a POST to `/api/fetch-ical` with `{"url":"https://..."}` or `{"url":"webcal://..."}` as JSON. This avoids query-string encoding issues.
+	- Base64: send `?b64=<base64(url)>` where `<base64(url)>` is the URL base64-encoded (URL-safe base64 is supported). This avoids percent-encoding issues in GET queries.
+
+Example (POST JSON):
+```bash
+curl -X POST 'https://your-deploy.example.com/api/fetch-ical' \
+	-H 'Content-Type: application/json' \
+	-d '{"url":"https://p131-caldav.icloud.com/....public.ics"}'
+```
+
+Example (b64 GET):
+```bash
+curl 'https://your-deploy.example.com/api/fetch-ical?b64=$(echo -n "https://..." | base64)'
+```
+
 Recipe suggestions (optional)
 
 This prototype can query Spoonacular for recipe suggestions to suggest ingredients. To enable it, set the environment variable `SPOONACULAR_KEY` when starting the server in `server/`:

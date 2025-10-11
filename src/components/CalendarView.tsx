@@ -20,13 +20,17 @@ const PUBLIC_ICAL_URL = 'https://p131-caldav.icloud.com/published/2/MjEwMDk1ODQy
 export default function CalendarView({ selectedDate: selectedKey, onSelectDate }: { selectedDate?: string | null; onSelectDate?: (k: string) => void }) {
   const [events, setEvents] = useState<EventItem[]>([])
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [view, setView] = useState<'month'|'week'|'day'>('month')
   const [todosList, setTodosList] = useState<any[]>(getTodos())
 
   useEffect(() => {
     if (!PUBLIC_ICAL_URL) return
     fetch(PUBLIC_ICAL_URL)
-      .then((r) => r.text())
+      .then((r) => {
+        if (!r.ok) throw new Error('Fetch failed: ' + r.status)
+        return r.text()
+      })
       .then((data) => {
         try {
           const jcal = ICAL.parse(data)
@@ -45,7 +49,12 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
           setEvents(parsed)
         } catch (err) {
           console.error('ical parse err', err)
+          setFetchError('Failed to parse calendar data')
         }
+      })
+      .catch((err) => {
+        console.error('calendar fetch failed', err)
+        setFetchError(String(err))
       })
   // listen to todos changes
   useEffect(() => {
@@ -145,6 +154,26 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
             ))}
           </div>
         </>
+      )}
+
+      {fetchError && (
+        <div className="calendar-fetch-error" style={{ padding: 12, border: '1px solid #f2a', background: '#fff6f6', marginTop: 12 }}>
+          <strong>Calendar failed to load:</strong>
+          <div>{fetchError}</div>
+          <p>If your calendar URL is fragile (contains characters that get encoded), try one of these options:</p>
+          <ol>
+            <li>POST JSON to the proxy: <code>{`POST /api/fetch-ical { "url": "https://..." }`}</code></li>
+            <li>Use base64: <code>?b64=&lt;base64(url)&gt;</code> — URL-safe base64 is supported.</li>
+          </ol>
+          <div style={{ fontSize: 12, color: '#666' }}>
+            Example:
+            <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+              {`curl -X POST 'https://your-deploy.example.com/api/fetch-ical' \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://.../public.ics"}'`}
+            </pre>
+          </div>
+        </div>
       )}
 
       <div className="day-view">

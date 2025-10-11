@@ -1,7 +1,9 @@
 module.exports = async function handler(req, res) {
   try {
-  // Emit immediate invocation info.
-  try { console.error('[debug] fetch-ical invoked', { method: req.method, url: req.url, query: req.query && Object.keys(req.query) }); } catch (e) {}
+  // Verbose logging controlled by env var to avoid noisy production logs.
+  const VERBOSE = !!(process.env && (process.env.VERBOSE_I_CAL === '1' || process.env.VERBOSE_I_CAL === 'true'))
+  // Emit immediate invocation info when VERBOSE is set.
+  try { if (VERBOSE) console.error('[debug] fetch-ical invoked', { method: req.method, url: req.url, query: req.query && Object.keys(req.query) }); } catch (e) {}
 
   // Super-early debug short-circuit: inspect raw req.url string (avoid relying on req.query)
   try {
@@ -45,7 +47,7 @@ module.exports = async function handler(req, res) {
           }
         }
       } catch (e) {
-        try { console.error('[fetch-ical] post body parse failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
+        try { if (VERBOSE) console.error('[fetch-ical] post body parse failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
       }
     }
     // Support a base64-encoded URL fallback to avoid percent-encoding issues.
@@ -60,14 +62,14 @@ module.exports = async function handler(req, res) {
       } catch (e) { return null }
     }
     const b64raw = getB64(req)
-    if (b64raw) {
+          if (b64raw) {
       try {
         // support URL-safe base64
         const norm = b64raw.replace(/-/g, '+').replace(/_/g, '/')
         rawParam = Buffer.from(norm, 'base64').toString('utf8')
-        try { console.error('[fetch-ical] using b64 decoded url', { rawParam }) } catch (e) {}
+            try { if (VERBOSE) console.error('[fetch-ical] using b64 decoded url', { rawParam }) } catch (e) {}
       } catch (e) {
-        try { console.error('[fetch-ical] b64 decode failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
+            try { if (VERBOSE) console.error('[fetch-ical] b64 decode failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
       }
     }
     // Try to read the raw encoded value from req.url first (so we capture exact percent-encoding)
@@ -89,7 +91,7 @@ module.exports = async function handler(req, res) {
       rawParam = Array.isArray(req.query.url) ? req.query.url[0] : req.query.url
     }
   } catch (e) {
-    try { console.error('[fetch-ical] error reading param', e && e.stack ? e.stack : String(e)) } catch (e) {}
+    try { if (VERBOSE) console.error('[fetch-ical] error reading param', e && e.stack ? e.stack : String(e)) } catch (e) {}
   }
 
   if (!rawParam) {
@@ -106,7 +108,7 @@ module.exports = async function handler(req, res) {
       decoded = decodedOnce
     }
   } catch (e) {
-    try { console.error('[fetch-ical] decodeURIComponent failed (first)', e && e.stack ? e.stack : String(e)) } catch (e) {}
+    try { if (VERBOSE) console.error('[fetch-ical] decodeURIComponent failed (first)', e && e.stack ? e.stack : String(e)) } catch (e) {}
     decodedOnce = null
   }
 
@@ -116,9 +118,9 @@ module.exports = async function handler(req, res) {
       try {
         const decodedTwice = decodeURIComponent(decoded)
         if (decodedTwice) decoded = decodedTwice
-        try { console.error('[fetch-ical] applied second decode', { decodedTwice }) } catch (e) {}
+        try { if (VERBOSE) console.error('[fetch-ical] applied second decode', { decodedTwice }) } catch (e) {}
       } catch (e) {
-        try { console.error('[fetch-ical] second decode failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
+        try { if (VERBOSE) console.error('[fetch-ical] second decode failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
       }
     }
   } catch (e) { /* noop */ }
@@ -130,23 +132,33 @@ module.exports = async function handler(req, res) {
         const replaced = String(rawParam).replace(/webcal%3A/ig, 'https%3A')
         const rdec = decodeURIComponent(replaced)
         if (rdec) decoded = rdec
-        try { console.error('[fetch-ical] replaced webcal%3A -> decoded', { replaced, rdec }) } catch (e) {}
+        try { if (VERBOSE) console.error('[fetch-ical] replaced webcal%3A -> decoded', { replaced, rdec }) } catch (e) {}
       } catch (e) {
-        try { console.error('[fetch-ical] replace+decode failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
+        try { if (VERBOSE) console.error('[fetch-ical] replace+decode failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
       }
     }
   } catch (e) { /* noop */ }
 
-  // Convert webcal: to https: when present.
+  // Convert webcal: to https: when present and sanitize the final URL string.
   const fetchUrl = decoded.replace(/^webcal:/i, 'https:')
+  // Remove any invisible/control chars and trim.
+  const sanitizedFetchUrl = String(fetchUrl || '').trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
 
-  try { console.error('[fetch-ical] urls', { rawParam, decoded, fetchUrl }) } catch (e) {}
+  // Validate URL object early so we can log a helpful error before fetching.
+  let targetUrlObj = null
+  try {
+    targetUrlObj = new URL(sanitizedFetchUrl)
+  } catch (e) {
+    try { console.error('[fetch-ical] invalid fetchUrl', { rawParam, decoded, fetchUrl: sanitizedFetchUrl, err: String(e) }) } catch (e) {}
+  }
+
+  try { if (VERBOSE) console.error('[fetch-ical] urls', { rawParam, decoded, fetchUrl: sanitizedFetchUrl, host: targetUrlObj && targetUrlObj.host }) } catch (e) {}
 
   // If caller asked for debug, return the internal parsing results as JSON
   const q = req.query || {}
   const bodyDebug = req.body && (req.body.debug === true || req.body.debug === '1' || req.body.debug === 1)
   const queryDebug = q.debug === '1' || q.debug === 'true'
-  if (queryDebug || bodyDebug) {
+    if (queryDebug || bodyDebug) {
     const out = {
       rawRequestUrl: req.url,
       rawParam: rawParam || null,
@@ -154,7 +166,7 @@ module.exports = async function handler(req, res) {
       fetchUrl: fetchUrl || null,
       query: q
     }
-    try { console.error('[fetch-ical] debug-response', out) } catch (e) {}
+    try { if (VERBOSE) console.error('[fetch-ical] debug-response', out) } catch (e) {}
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.status(200).send(JSON.stringify(out, null, 2))
     return
@@ -179,19 +191,44 @@ module.exports = async function handler(req, res) {
     }
   ]
 
+  // Append a couple of more aggressive header permutations that explicitly set Host/Origin
+  // and avoid compressed responses (some upstreams behave differently for identity).
+  try {
+    if (targetUrlObj) {
+      headerAttempts.push({
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
+        'Accept': 'text/calendar, */*;q=0.1',
+        'Referer': 'https://www.icloud.com/',
+        'Origin': 'https://www.icloud.com',
+        'Accept-Encoding': 'identity',
+        'Connection': 'close',
+        'Host': targetUrlObj.host
+      })
+      headerAttempts.push({
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
+        'Accept': '*/*',
+        'Origin': 'https://www.icloud.com',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Host': targetUrlObj.host
+      })
+    }
+  } catch (e) {
+    /* ignore header push errors */
+  }
+
   let lastStatus = null
   let lastBodySnippet = ''
   try {
     for (let i = 0; i < headerAttempts.length; i++) {
       const h = headerAttempts[i]
-      try { console.error('[fetch-ical] attempt fetch', { attempt: i + 1, fetchUrl, headers: Object.keys(h) }) } catch (e) {}
-      const upstream = await fetch(fetchUrl, { headers: h, redirect: 'follow' })
+      try { if (VERBOSE) console.error('[fetch-ical] attempt fetch', { attempt: i + 1, fetchUrl: sanitizedFetchUrl, headers: Object.keys(h) }) } catch (e) {}
+      const upstream = await fetch(sanitizedFetchUrl, { headers: h, redirect: 'follow' })
       lastStatus = upstream.status
-      try { console.error('[fetch-ical] upstream status', { attempt: i + 1, status: upstream.status, url: fetchUrl }) } catch (e) {}
+      try { if (VERBOSE) console.error('[fetch-ical] upstream status', { attempt: i + 1, status: upstream.status, url: fetchUrl }) } catch (e) {}
       if (!upstream.ok) {
         const body = await upstream.text().catch(() => '')
         lastBodySnippet = body && body.slice ? body.slice(0, 200) : String(body)
-        try { console.error('[fetch-ical] upstream non-ok body', { attempt: i + 1, status: upstream.status, body: lastBodySnippet }) } catch (e) {}
+        try { if (VERBOSE) console.error('[fetch-ical] upstream non-ok body', { attempt: i + 1, status: upstream.status, body: lastBodySnippet }) } catch (e) {}
         // try next header set
         continue
       }
