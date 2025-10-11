@@ -1,4 +1,12 @@
 node_modules/
+dist/
+/.env
+/.env.*
+tmp-npm-cache/
+.DS_Store
+/.vite
+/.idea
+*.lognode_modules/
 /server/node_modules/
 .env
 dist/
