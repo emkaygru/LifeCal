@@ -8,6 +8,28 @@ module.exports = async function handler(req, res) {
   // - missing and present in the raw req.url's search params
   let rawParam = undefined
   try {
+    // Support a base64-encoded URL fallback to avoid percent-encoding issues.
+    // Caller can send `?b64=<base64(url)>` where url is e.g. https://... or webcal://...
+    const getB64 = (r) => {
+      try {
+        if (!r) return null
+        if (r.query && r.query.b64) return Array.isArray(r.query.b64) ? r.query.b64[0] : r.query.b64
+        // try to extract from raw URL
+        const m = (r.url || '').match(/[?&]b64=([^&]+)/)
+        return m ? m[1] : null
+      } catch (e) { return null }
+    }
+    const b64raw = getB64(req)
+    if (b64raw) {
+      try {
+        // support URL-safe base64
+        const norm = b64raw.replace(/-/g, '+').replace(/_/g, '/')
+        rawParam = Buffer.from(norm, 'base64').toString('utf8')
+        try { console.error('[fetch-ical] using b64 decoded url', { rawParam }) } catch (e) {}
+      } catch (e) {
+        try { console.error('[fetch-ical] b64 decode failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
+      }
+    }
     // Try to read the raw encoded value from req.url first (so we capture exact percent-encoding)
     const getRawQueryValue = (r, key) => {
       try {
