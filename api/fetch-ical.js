@@ -2,13 +2,17 @@ module.exports = async function handler(req, res) {
   // Emit immediate invocation info.
   try { console.error('[debug] fetch-ical invoked', { method: req.method, url: req.url, query: req.query && Object.keys(req.query) }); } catch (e) {}
 
-  // Super-early debug short-circuit: return raw request shape before any parsing.
+  // Super-early debug short-circuit: inspect raw req.url string (avoid relying on req.query)
   try {
-    const qEarly = req.query || {}
-    if (qEarly.debug === '1' || qEarly.debug === 'true') {
+    const rawUrlStr = String(req.url || '')
+    const m = rawUrlStr.match(/[?&]debug(?:=([^&]*))?/) // capture value if present
+    const debugPresent = !!m
+    const debugValue = m && m[1] ? decodeURIComponent(m[1]) : null
+    if (debugPresent && (debugValue === null || debugValue === '1' || debugValue === 'true')) {
       const outEarly = {
-        rawRequestUrl: req.url,
-        query: qEarly,
+        rawRequestUrl: rawUrlStr,
+        rawQueryString: rawUrlStr.split('?')[1] || null,
+        queryObjectKeys: req.query ? Object.keys(req.query) : null,
         headers: req.headers
       }
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
