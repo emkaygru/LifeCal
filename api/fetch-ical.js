@@ -1,4 +1,5 @@
 module.exports = async function handler(req, res) {
+  try {
   // Emit immediate invocation info.
   try { console.error('[debug] fetch-ical invoked', { method: req.method, url: req.url, query: req.query && Object.keys(req.query) }); } catch (e) {}
 
@@ -183,5 +184,9 @@ module.exports = async function handler(req, res) {
     try { console.error('[fetch-ical] fetch exception', err && err.stack ? err.stack : String(err), { fetchUrl, rawParam }) } catch (e) {}
     res.status(500).send('fetch failed')
     return
+  }
+  } catch (error) {
+    console.error('[fetch-ical] unhandled error', error);
+    res.status(500).json({ error: 'Internal Server Error', message: error.message });
   }
 }
