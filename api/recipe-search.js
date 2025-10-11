@@ -1,5 +1,6 @@
 module.exports = async function handler(req, res) {
   try {
+    try { console.error('[debug] recipe-search invoked', { method: req.method, query: req.query && Object.keys(req.query) }); } catch (e) {}
     const q = req.query.query || ''
     const key = process.env.SPOONACULAR_KEY
     if (!key) return res.json({ results: [] })
