@@ -160,26 +160,52 @@ module.exports = async function handler(req, res) {
     return
   }
 
-  const headers = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
-    'Accept': 'text/calendar, */*;q=0.1',
-    'Referer': 'https://www.icloud.com/'
-  }
-
-  try {
-    try { console.error('[fetch-ical] fetching', fetchUrl) } catch (e) {}
-    const upstream = await fetch(fetchUrl, { headers, redirect: 'follow' })
-    try { console.error('[fetch-ical] upstream status', { status: upstream.status, url: fetchUrl }) } catch (e) {}
-    if (!upstream.ok) {
-      const body = await upstream.text().catch(() => '')
-      try { console.error('[fetch-ical] upstream non-ok body', { status: upstream.status, body: body && body.slice ? body.slice(0, 200) : String(body) }) } catch (e) {}
-      return res.status(502).send('Upstream error')
+  // Try a few header permutations to work around upstream protections/rate-limits.
+  const headerAttempts = [
+    {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
+      'Accept': 'text/calendar, */*;q=0.1',
+      'Referer': 'https://www.icloud.com/'
+    },
+    // remove Referer
+    {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
+      'Accept': 'text/calendar, */*;q=0.1'
+    },
+    // use curl-like UA and accept-any
+    {
+      'User-Agent': 'curl/8.0.1',
+      'Accept': '*/*'
     }
-    const text = await upstream.text()
-    res.setHeader('Content-Type', 'text/calendar; charset=utf-8')
-    res.setHeader('X-Debug-Invoked', 'fetch-ical')
-    res.send(text)
-    return
+  ]
+
+  let lastStatus = null
+  let lastBodySnippet = ''
+  try {
+    for (let i = 0; i < headerAttempts.length; i++) {
+      const h = headerAttempts[i]
+      try { console.error('[fetch-ical] attempt fetch', { attempt: i + 1, fetchUrl, headers: Object.keys(h) }) } catch (e) {}
+      const upstream = await fetch(fetchUrl, { headers: h, redirect: 'follow' })
+      lastStatus = upstream.status
+      try { console.error('[fetch-ical] upstream status', { attempt: i + 1, status: upstream.status, url: fetchUrl }) } catch (e) {}
+      if (!upstream.ok) {
+        const body = await upstream.text().catch(() => '')
+        lastBodySnippet = body && body.slice ? body.slice(0, 200) : String(body)
+        try { console.error('[fetch-ical] upstream non-ok body', { attempt: i + 1, status: upstream.status, body: lastBodySnippet }) } catch (e) {}
+        // try next header set
+        continue
+      }
+      // success
+      const text = await upstream.text()
+      res.setHeader('Content-Type', 'text/calendar; charset=utf-8')
+      res.setHeader('X-Debug-Invoked', 'fetch-ical')
+      res.send(text)
+      return
+    }
+
+    // All attempts failed
+    try { console.error('[fetch-ical] all fetch attempts failed', { lastStatus, lastBodySnippet }) } catch (e) {}
+    return res.status(502).send('Upstream error')
   } catch (err) {
     try { console.error('[fetch-ical] fetch exception', err && err.stack ? err.stack : String(err), { fetchUrl, rawParam }) } catch (e) {}
     res.status(500).send('fetch failed')
