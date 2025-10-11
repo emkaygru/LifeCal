@@ -30,14 +30,14 @@ export default function PeopleManager({ onChange }: { onChange?: (people: Person
       <div className="add-row">
         <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Name" />
         <input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} />
-        <button onClick={add}>Add</button>
+  <button className="btn" onClick={add}>Add</button>
       </div>
       <ul>
         {people.map(p => (
           <li key={p.id}>
-            <span style={{ background: p.color, width:12, height:12, display:'inline-block', borderRadius:6, marginRight:8 }} />
+            <span className="color-dot" style={{ background: p.color }} />
             {p.name}
-            <button onClick={() => remove(p.id)} style={{ marginLeft: 8 }}>Remove</button>
+            <button className="btn btn-ghost" onClick={() => remove(p.id)} style={{ marginLeft: 8 }}>Remove</button>
           </li>
         ))}
       </ul>

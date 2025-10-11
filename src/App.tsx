@@ -24,21 +24,21 @@ export default function App() {
         <div className="layout-controls">
           <label>
             Layout:
-            <select value={layout} onChange={(e) => setLayout(e.target.value)}>
+            <select className="btn" value={layout} onChange={(e) => setLayout(e.target.value)}>
               <option value="default">Default</option>
               <option value="compact">Compact</option>
             </select>
           </label>
           <label>
             Theme:
-            <select value={theme} onChange={(e)=>{ const v = e.target.value as any; setTheme(v); localStorage.setItem('theme', v); document.documentElement.setAttribute('data-theme', v) }}>
+            <select className="btn" value={theme} onChange={(e)=>{ const v = e.target.value as any; setTheme(v); localStorage.setItem('theme', v); document.documentElement.setAttribute('data-theme', v) }}>
               <option value="dark">Dark</option>
               <option value="light">Light</option>
             </select>
           </label>
           <label>
             User:
-            <select value={user} onChange={(e)=>{ setUser(e.target.value); localStorage.setItem('user', e.target.value) }}>
+            <select className="btn" value={user} onChange={(e)=>{ setUser(e.target.value); localStorage.setItem('user', e.target.value) }}>
               <option>Emily</option>
               <option>Steph</option>
             </select>

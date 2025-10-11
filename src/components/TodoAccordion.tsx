@@ -106,7 +106,7 @@ export default function TodoAccordion({ selectedDate }: { selectedDate?: string 
             people.map(p => <option key={p.id} value={p.name}>{p.name}</option>)
           )}
         </select>
-        <button onClick={addTodo}>Add</button>
+  <button className="btn" onClick={addTodo}>Add</button>
       </div>
 
       <div className="accordion-list">
@@ -126,7 +126,7 @@ export default function TodoAccordion({ selectedDate }: { selectedDate?: string 
                         <div key={t.id} draggable onDragStart={(e) => onDragStart(e, t.id)} className="todo-card">
                           <div className="card-top">
                             <input type="checkbox" checked={t.done} onChange={() => toggleDone(t.id)} />
-                            <span className="title" style={{ textDecoration: t.done ? 'line-through' : 'none' }}>{t.title}</span>
+                            <span className={`title ${t.done ? 'done' : ''}`}>{t.title}</span>
                           </div>
                           <div className="card-bottom">
                             <select value={t.owner} onChange={(e) => setOwner(t.id, e.target.value)}>

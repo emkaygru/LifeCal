@@ -59,17 +59,17 @@ export default function DrawingPad() {
   return (
     <div className="drawing-pad" style={{ maxWidth: 320 }}>
       <h3>Sticky Note</h3>
-      <canvas ref={canvasRef} onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
-        onTouchStart={start} onTouchMove={move} onTouchEnd={end} style={{ borderRadius: 6, touchAction: 'none', width: '100%' }} />
+      <canvas ref={canvasRef} className="sticky-canvas" onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
+        onTouchStart={start} onTouchMove={move} onTouchEnd={end} />
       <div className="controls">
         <label>Color: <input type="color" value={color} onChange={(e) => setColor(e.target.value)} /></label>
-        <button onClick={() => {
+        <button className="btn" onClick={() => {
           const c = canvasRef.current!
           const data = c.toDataURL()
           localStorage.setItem('sticky-note', data)
           alert('Saved')
         }}>Save</button>
-        <button onClick={() => {
+        <button className="btn btn-ghost" onClick={() => {
           const c = canvasRef.current!
           const ctx = c.getContext('2d')!
           ctx.fillStyle = '#fff8c4'

@@ -110,8 +110,8 @@ export default function GroceryList() {
           </div>
         )}
         <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category" />
-        <button onClick={add}>Add</button>
-        <button onClick={() => addSuggestionsFor(newItem)}>Suggest</button>
+  <button className="btn" onClick={add}>Add</button>
+  <button className="btn btn-ghost" onClick={() => addSuggestionsFor(newItem)}>Suggest</button>
         <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
           <option value="date">By date</option>
           <option value="department">By department</option>
@@ -137,7 +137,7 @@ export default function GroceryList() {
           </ul>
           <div>
             <label>Date: <input type="date" defaultValue={new Date().toISOString().slice(0,10)} id="add-recipe-date" /></label>
-            <button onClick={() => {
+            <button className="btn" onClick={() => {
               const date = (document.getElementById('add-recipe-date') as HTMLInputElement).value
               const meals = JSON.parse(localStorage.getItem('meals')||'[]')
               meals.push({ id: Date.now().toString(), date, title: recipeDetails.title, groceries: (recipeDetails.extendedIngredients||[]).map((i:any)=>i.name) })
@@ -150,7 +150,7 @@ export default function GroceryList() {
                 window.dispatchEvent(new CustomEvent('grocery-updated'))
                 alert('Added recipe to meals and grocery list')
             }}>Add to Meal</button>
-            <button onClick={() => { setSelectedRecipe(null); setRecipeDetails(null) }}>Close</button>
+            <button className="btn btn-ghost" onClick={() => { setSelectedRecipe(null); setRecipeDetails(null) }}>Close</button>
           </div>
         </div>
       )}

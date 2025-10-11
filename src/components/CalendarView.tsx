@@ -143,37 +143,27 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   }
 
   return (
-    <div className="calendar">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div style={{ fontSize: 14, color: '#333' }}>
+    <div className="calendar card">
+      <div className="calendar-top">
+        <div className="upcoming-count">
           Upcoming: {events.length === 0 ? '—' : `${events.length} events`}
         </div>
-        <div>
-          <button onClick={() => fetchCalendar()} disabled={loading} style={{ marginRight: 8 }}>{loading ? 'Refreshing...' : 'Refresh'}</button>
+        <div className="calendar-actions">
+          <button className="btn" onClick={() => fetchCalendar()} disabled={loading}>{loading ? 'Refreshing...' : 'Refresh'}</button>
         </div>
       </div>
 
-      {/* Compact upcoming list */}
-      {events.length > 0 && (
-        <div className="upcoming-list" style={{ marginBottom: 12 }}>
-          {events.slice(0,5).map(ev => (
-            <div key={ev.id} style={{ padding: 6, borderBottom: '1px solid #eee' }}>
-              <div style={{ fontWeight: 600 }}>{ev.title}</div>
-              <div style={{ fontSize: 12, color: '#666' }}>{ev.start.toLocaleString()} — {ev.end.toLocaleTimeString()}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* upfront compact upcoming list removed — details shown when a date is clicked */}
       <div className="calendar-header">
-        <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))}>{'<'}</button>
+        <button className="btn" onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))}>{'<'}</button>
         <h2>{selectedDate.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</h2>
-        <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))}>{'>'}</button>
+        <button className="btn" onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))}>{'>'}</button>
       </div>
 
       <div className="view-controls">
-        <button onClick={() => setView('month')}>Month</button>
-        <button onClick={() => setView('week')}>Week</button>
-        <button onClick={() => setView('day')}>Day</button>
+        <button className={`btn ${view==='month'?'active':''}`} onClick={() => setView('month')}>Month</button>
+        <button className={`btn ${view==='week'?'active':''}`} onClick={() => setView('week')}>Week</button>
+        <button className={`btn ${view==='day'?'active':''}`} onClick={() => setView('day')}>Day</button>
       </div>
 
       {view === 'month' && (
@@ -199,7 +189,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
                   ))}
                   {(() => {
                     const p = percentDoneForDay(d)
-                    if (p > 0) return <div className="percent-pill" style={{ background: '#f6d365' }}>{p}%</div>
+                    if (p > 0) return <div className="percent-pill">{p}%</div>
                     return null
                   })()}
                 </div>
@@ -211,7 +201,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
       )}
 
       {fetchError && (
-        <div className="calendar-fetch-error" style={{ padding: 12, border: '1px solid #f2a', background: '#fff6f6', marginTop: 12 }}>
+        <div className="calendar-fetch-error">
           <strong>Calendar failed to load:</strong>
           <div>{fetchError}</div>
           <p>If your calendar URL is fragile (contains characters that get encoded), try one of these options:</p>
@@ -219,9 +209,9 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
             <li>POST JSON to the proxy: <code>{`POST /api/fetch-ical { "url": "https://..." }`}</code></li>
             <li>Use base64: <code>?b64=&lt;base64(url)&gt;</code> — URL-safe base64 is supported.</li>
           </ol>
-          <div style={{ fontSize: 12, color: '#666' }}>
+          <div className="helper-note">
             Example:
-            <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+            <pre>
               {`curl -X POST 'https://your-deploy.example.com/api/fetch-ical' \
   -H 'Content-Type: application/json' \
   -d '{"url":"https://.../public.ics"}'`}
@@ -251,7 +241,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
             {todosForDay(selectedDate).map((t:any)=> (
               <div key={t.id} className="todo-row">
                 <input type="checkbox" checked={t.done} onChange={() => { const todos = getTodos().map((x:any)=> x.id===t.id?{...x,done:!x.done, status: (!x.done? 'done':'todo')} : x); localStorage.setItem('todos', JSON.stringify(todos)); window.dispatchEvent(new CustomEvent('todos-updated')) }} />
-                <span style={{ textDecoration: t.done? 'line-through':'none' }}>{t.title}</span>
+                <span className={`todo-title ${t.done? 'done':''}`}>{t.title}</span>
                 <small>Due: {t.date|| '—'}</small>
               </div>
             ))}
@@ -273,7 +263,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
                 <option>FACTOR</option>
                 <option>LEFTOVERS</option>
               </select>
-              <button onClick={()=>{ alert('Apply to multiple days: (not implemented)') }}>Apply to multiple days</button>
+              <button className="btn btn-ghost" onClick={()=>{ alert('Apply to multiple days: (not implemented)') }}>Apply to multiple days</button>
             </div>
             <div className="meal-ingredients">
               Ingredients: {(() => { const m = JSON.parse(localStorage.getItem('meals')||'[]').find((mm:any)=>mm.date===selectedDate.toISOString().slice(0,10)); return m && m.groceries ? m.groceries.join(', ') : 'None' })()}

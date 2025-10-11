@@ -5,9 +5,16 @@ const puppeteer = require('puppeteer');
 async function run() {
   const OUT = '/tmp/headless_console.json';
   const url = process.argv[2] || 'https://life-aoy13ofo8-emilys-projects-9f8716f7.vercel.app';
+  // simple arg parsing for --timeout and --wait
+  const argv = process.argv.slice(3);
+  const timeoutArg = argv.find(a => a.startsWith('--timeout='));
+  const waitArg = argv.find(a => a.startsWith('--wait='));
+  const timeout = timeoutArg ? parseInt(timeoutArg.split('=')[1], 10) : 60000;
+  const waitUntil = waitArg ? waitArg.split('=')[1] : 'domcontentloaded';
   console.log('Checking', url);
-  const browser = await puppeteer.launch({args: ['--no-sandbox','--disable-setuid-sandbox']});
+  const browser = await puppeteer.launch({args: ['--no-sandbox','--disable-setuid-sandbox'], protocolTimeout: timeout + 20000});
   const page = await browser.newPage();
+  page.setDefaultNavigationTimeout(timeout);
   const logs = {console: [], errors: [], requests: [], responses: []};
 
   page.on('console', msg => {
@@ -26,7 +33,7 @@ async function run() {
   });
 
   // Navigate and wait
-  await page.goto(url, {waitUntil: 'networkidle2', timeout: 30000}).catch(e => logs.errors.push({message: 'goto-failed', detail: e.message}));
+  await page.goto(url, {waitUntil, timeout}).catch(e => logs.errors.push({message: 'goto-failed', detail: e.message}));
 
   // Try to call the fetch-ical endpoint from the page context (same origin) using GET and POST if available
   try {

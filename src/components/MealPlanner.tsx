@@ -36,7 +36,7 @@ export default function MealPlanner({ selectedDate }: { selectedDate?: string | 
       <div className="add-row">
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Meal" />
-        <button onClick={addMeal}>Add</button>
+  <button className="btn" onClick={addMeal}>Add</button>
       </div>
 
       <div className="meals-list">
@@ -49,7 +49,7 @@ export default function MealPlanner({ selectedDate }: { selectedDate?: string | 
               const list = e.currentTarget.value.split(',').map(s => s.trim()).filter(Boolean)
               setMeals(s => s.map(x => x.id === m.id ? { ...x, groceries: list } : x))
             }} />
-            <button onClick={() => {
+            <button className="btn btn-ghost" onClick={() => {
               const groceries = m.groceries || []
               const existing = JSON.parse(localStorage.getItem('grocery') || '[]')
               const now = Date.now().toString()
