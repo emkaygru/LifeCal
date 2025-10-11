@@ -50,7 +50,19 @@ body{font-family: Inter, system-ui, -apple-system, 'Helvetica Neue', Arial; marg
 .status-done{border:2px dashed #cfe5d4}
 
 @media(max-width:700px){.status-columns{flex-direction:column}}
-.suggestions{position:absolute;left:8px;right:8px;top:40px;background:var(--card-bg);border:1px solid #ddd;border-radius:6px;z-index:20}
+.add-row{display:flex;gap:8px;margin-bottom:8px;position:relative}
+
+.add-row .suggestions, .grocery .add-row .suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  background: var(--card-bg);
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  z-index: 500;
+  box-shadow: 0 6px 18px rgba(10,20,30,0.08);
+}
 .suggest-item{padding:8px;border-bottom:1px solid #f0f0f0;cursor:pointer}
 .suggest-item:hover{background:#f6f6f6}
 .suggest-item.recipe{background:#fff7e6}
@@ -60,5 +72,5 @@ body{font-family: Inter, system-ui, -apple-system, 'Helvetica Neue', Arial; marg
 .accordion-header{width:100%;text-align:left;padding:8px;border:none;background:#fafafa;border-radius:6px}
 .todo-row{display:flex;align-items:center;gap:8px;padding:6px}
 .owner{padding:4px 8px;border-radius:12px;color:white;font-size:12px;margin-left:auto}
-.add-row{display:flex;gap:8px;margin-bottom:8px}
+/* .add-row rule moved above to ensure positioning for suggestions */
 @media(max-width:900px){.dashboard{flex-direction:column}.side-col{width:100%}}

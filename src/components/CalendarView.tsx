@@ -56,9 +56,16 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
             description: e.description
           }
         })
-        // sort by start date ascending
-        parsed.sort((a, b) => a.start.getTime() - b.start.getTime())
-        setEvents(parsed)
+  // sort by start date ascending
+  parsed.sort((a, b) => a.start.getTime() - b.start.getTime())
+
+  // Drop events that ended before today. We only want current/new/updated events
+  // moving forward (inclusive of today).
+  const todayStart = new Date()
+  todayStart.setHours(0,0,0,0)
+  const futureEvents = parsed.filter(ev => ev.end.getTime() >= todayStart.getTime())
+
+  setEvents(futureEvents)
       } catch (err) {
         console.error('ical parse err', err)
         setFetchError('Failed to parse calendar data')
