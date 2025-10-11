@@ -11,3 +11,5 @@ export default async function handler(request: Request) {
     return new Response(err?.message || String(err), { status: 500 })
   }
 }
+// NOTE: Renamed to .bak.ts to avoid Vercel path conflicts with existing .js handler.
+// Original TypeScript handler backed up here.
