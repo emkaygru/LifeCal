@@ -50,3 +50,20 @@ Next steps (I can implement on request):
 - OAuth or server-based calendar sync to securely read private calendars.
 - Drag-and-drop layout customization, grid placement and save.
 - Better calendar UI (day/week view, event editing), and shared realtime sync (Firebase, Supabase).
+
+Vercel deployment (private, auto-updating)
+
+If you connected this repo to Vercel, you can deploy and protect the site using simple Edge middleware basic auth.
+
+1. In your Vercel project Settings -> Environment Variables add:
+	- BASIC_AUTH_USER (string)
+	- BASIC_AUTH_PASS (string)
+	- SPOONACULAR_KEY (optional, for recipe endpoints)
+
+2. The repo already contains serverless routes under `/api/*` and `middleware.js` which Vercel will use.
+
+3. Deploy: Vercel will build on push to `main` (Build Command: `npm run build`, Output: `dist`).
+
+4. Visit the Vercel URL and you'll be prompted for the basic auth username and password you set.
+
+If you'd prefer to use Vercel Access (Teams) or Cloudflare Access for stronger auth, that also integrates cleanly and I can help set it up.
