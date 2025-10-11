@@ -6,7 +6,19 @@ module.exports = async function handler(req, res) {
     if (!url) return res.status(400).send('Missing url param')
 
     // Support webcal: published iCloud links by converting to https:
-    const fetchUrl = String(url).replace(/^webcal:/i, 'https:')
+    // URL may be percent-encoded (webcal%3A...), so decode first if needed.
+    let rawUrl = url
+    try {
+      // If the value contains percent-encoding, decode it safely
+      if (/%[0-9A-Fa-f]{2}/.test(String(rawUrl))) {
+        rawUrl = decodeURIComponent(String(rawUrl))
+      }
+    } catch (e) {
+      // ignore decode errors and keep raw value
+    }
+    const fetchUrl = String(rawUrl).replace(/^webcal:/i, 'https:')
+
+    try { console.error('[fetch-ical] rawUrl/decoded/fetchUrl', { raw: url, decoded: rawUrl, fetchUrl }) } catch (e) {}
 
     // Use browser-like headers; some upstreams (icloud) block non-browser agents.
     const headers = {
