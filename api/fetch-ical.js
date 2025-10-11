@@ -120,6 +120,24 @@ module.exports = async function handler(req, res) {
 
   try { console.error('[fetch-ical] urls', { rawParam, decoded, fetchUrl }) } catch (e) {}
 
+  // If caller asked for debug, return the internal parsing results as JSON
+  const q = req.query || {}
+  const bodyDebug = req.body && (req.body.debug === true || req.body.debug === '1' || req.body.debug === 1)
+  const queryDebug = q.debug === '1' || q.debug === 'true'
+  if (queryDebug || bodyDebug) {
+    const out = {
+      rawRequestUrl: req.url,
+      rawParam: rawParam || null,
+      decoded: decoded || null,
+      fetchUrl: fetchUrl || null,
+      query: q
+    }
+    try { console.error('[fetch-ical] debug-response', out) } catch (e) {}
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
+    res.status(200).send(JSON.stringify(out, null, 2))
+    return
+  }
+
   const headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
     'Accept': 'text/calendar, */*;q=0.1',
