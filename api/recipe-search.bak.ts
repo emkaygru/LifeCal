@@ -1,3 +1,9 @@
+// Backed up original TypeScript handler to recipe-search.bak.ts
+// The active CommonJS handler is api/recipe-search.js
+
+export async function handler(request: Request) {
+  return new Response('bak', { status: 200 })
+}
 export default async function handler(request: Request) {
   try {
     const q = new URL(request.url).searchParams.get('query') || ''
