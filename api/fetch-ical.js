@@ -8,17 +8,23 @@ module.exports = async function handler(req, res) {
   // - missing and present in the raw req.url's search params
   let rawParam = undefined
   try {
-    if (req.query && req.query.url) {
-      // If Express parsed as array, take first element
-      rawParam = Array.isArray(req.query.url) ? req.query.url[0] : req.query.url
-    } else if (req.url) {
-      // Try to parse from the raw request URL
+    // Try to read the raw encoded value from req.url first (so we capture exact percent-encoding)
+    const getRawQueryValue = (r, key) => {
       try {
-        const parsed = new URL(req.url, `http://${req.headers.host}`)
-        rawParam = parsed.searchParams.get('url')
+        if (!r || !r.url) return null
+        const m = r.url.match(new RegExp('[?&]' + key + '=([^&]+)'))
+        return m ? m[1] : null
       } catch (e) {
-        // fall through
+        return null
       }
+    }
+
+    const rawFromUrl = getRawQueryValue(req, 'url')
+    if (rawFromUrl) {
+      rawParam = rawFromUrl
+    } else if (req.query && req.query.url) {
+      // fallback to parsed value
+      rawParam = Array.isArray(req.query.url) ? req.query.url[0] : req.query.url
     }
   } catch (e) {
     try { console.error('[fetch-ical] error reading param', e && e.stack ? e.stack : String(e)) } catch (e) {}
@@ -31,12 +37,43 @@ module.exports = async function handler(req, res) {
 
   // Percent-decoding may be required if callers double-encode the url.
   let decoded = String(rawParam)
+  let decodedOnce = null
   try {
-    if (/%[0-9A-Fa-f]{2}/.test(decoded)) decoded = decodeURIComponent(decoded)
+    if (/%[0-9A-Fa-f]{2}/.test(decoded)) {
+      decodedOnce = decodeURIComponent(decoded)
+      decoded = decodedOnce
+    }
   } catch (e) {
-    try { console.error('[fetch-ical] decodeURIComponent failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
-    // keep original if decode fails
+    try { console.error('[fetch-ical] decodeURIComponent failed (first)', e && e.stack ? e.stack : String(e)) } catch (e) {}
+    decodedOnce = null
   }
+
+  // If we didn't detect a scheme, try a second decode (some callers double-encode)
+  try {
+    if (decoded && !/^https?:|^webcal:/i.test(decoded) && /%[0-9A-Fa-f]{2}/.test(decoded)) {
+      try {
+        const decodedTwice = decodeURIComponent(decoded)
+        if (decodedTwice) decoded = decodedTwice
+        try { console.error('[fetch-ical] applied second decode', { decodedTwice }) } catch (e) {}
+      } catch (e) {
+        try { console.error('[fetch-ical] second decode failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
+      }
+    }
+  } catch (e) { /* noop */ }
+
+  // As a last-ditch, if the raw encoded value contains 'webcal%3A', replace it to 'https%3A' then decode
+  try {
+    if (!/^https?:|^webcal:/i.test(decoded) && /webcal%3A/i.test(String(rawParam))) {
+      try {
+        const replaced = String(rawParam).replace(/webcal%3A/ig, 'https%3A')
+        const rdec = decodeURIComponent(replaced)
+        if (rdec) decoded = rdec
+        try { console.error('[fetch-ical] replaced webcal%3A -> decoded', { replaced, rdec }) } catch (e) {}
+      } catch (e) {
+        try { console.error('[fetch-ical] replace+decode failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
+      }
+    }
+  } catch (e) { /* noop */ }
 
   // Convert webcal: to https: when present.
   const fetchUrl = decoded.replace(/^webcal:/i, 'https:')
