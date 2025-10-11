@@ -5,7 +5,10 @@ module.exports = async function handler(req, res) {
     const url = req.query.url || req.url && new URL(req.url, `http://${req.headers.host}`).searchParams.get('url')
     if (!url) return res.status(400).send('Missing url param')
 
-  const upstream = await fetch(url)
+    // Support webcal: published iCloud links by converting to https:
+    const fetchUrl = String(url).replace(/^webcal:/i, 'https:')
+
+    const upstream = await fetch(fetchUrl)
   if (!upstream.ok) return res.status(502).send('Upstream error')
   const text = await upstream.text()
   res.setHeader('Content-Type', 'text/calendar; charset=utf-8')
