@@ -24,6 +24,9 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [view, setView] = useState<'month'|'week'|'day'>('month')
   const [todosList, setTodosList] = useState<any[]>(getTodos())
+  const [mealChoice, setMealChoice] = useState<string>('NO PLAN')
+  const [multiOpen, setMultiOpen] = useState<boolean>(false)
+  const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({}) // key by YYYY-MM-DD
 
   // Helper: base64 encode that works in browser & node
   const base64Encode = (s: string) => {
@@ -142,6 +145,43 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
     }
   }
 
+  // week helpers (Mon-Sun)
+  function startOfWeek(d: Date) {
+    const dt = new Date(d)
+    const day = dt.getDay() // 0 Sun .. 6 Sat
+    const diff = (day === 0 ? -6 : 1) - day // shift so Monday is start
+    dt.setDate(dt.getDate() + diff)
+    dt.setHours(0,0,0,0)
+    return dt
+  }
+
+  function weekDates(base: Date) {
+    const start = startOfWeek(base)
+    return Array.from({length:7}, (_,i) => {
+      const d = new Date(start)
+      d.setDate(start.getDate() + i)
+      return d
+    })
+  }
+
+  // keep mealChoice in sync with selected day
+  useEffect(() => {
+    const key = toKey(selectedDate)
+    try {
+      const meals = JSON.parse(localStorage.getItem('meals')||'[]')
+      const m = meals.find((mm:any)=>mm.date===key)
+      setMealChoice((m && m.title) ? m.title : 'NO PLAN')
+    } catch { setMealChoice('NO PLAN') }
+  }, [selectedDate])
+
+  const availableMealTitles: string[] = (() => {
+    try {
+      const meals = JSON.parse(localStorage.getItem('meals')||'[]') as any[]
+      const titles = Array.from(new Set((meals||[]).map((m:any)=>m.title).filter((x:any)=>typeof x === 'string'))) as string[]
+      return ['NO PLAN','FACTOR', ...titles.filter(t => t !== 'NO PLAN' && t !== 'FACTOR')]
+    } catch { return ['NO PLAN','FACTOR'] }
+  })()
+
   return (
     <div className="calendar card">
       <div className="calendar-top">
@@ -178,7 +218,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
             ))}
 
             {monthDays.map((d) => (
-              <div key={d.toISOString()} className="day-cell" onClick={() => { setSelectedDate(d); onSelectDate?.(toKey(d)) }} onDrop={(e) => handleDrop(e, d)} onDragOver={allowDrop}>
+              <div key={d.toISOString()} className={`day-cell ${toKey(d)===toKey(selectedDate) ? 'selected' : ''}`} onClick={() => { setSelectedDate(d); onSelectDate?.(toKey(d)) }} onDrop={(e) => handleDrop(e, d)} onDragOver={allowDrop}>
                 <div className="date-num">{d.getDate()}</div>
                 <div className="event-preview">
                   {eventsForDay(d).slice(0, 2).map((ev) => (
@@ -249,22 +289,65 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
 
           <section className="day-meal-edit">
             <h4>Meal</h4>
-            <div>
-              <select defaultValue={(JSON.parse(localStorage.getItem('meals')||'[]').find((m:any)=>m.date===selectedDate.toISOString().slice(0,10))||{title:'NO MEAL'}).title} onChange={(e)=>{
+            <div className="meal-controls">
+              <select value={mealChoice} onChange={(e)=>{
                 const val = e.target.value
+                setMealChoice(val)
                 // apply to selected day only
                 const meals = JSON.parse(localStorage.getItem('meals')||'[]')
-                const idx = meals.findIndex((m:any)=>m.date===selectedDate.toISOString().slice(0,10))
-                if (idx>=0) { meals[idx].title = val; } else { meals.push({ id: Date.now().toString(), date: selectedDate.toISOString().slice(0,10), title: val, groceries: [] }) }
+                const key = selectedDate.toISOString().slice(0,10)
+                const idx = meals.findIndex((m:any)=>m.date===key)
+                if (idx>=0) { meals[idx].title = val; } else { meals.push({ id: Date.now().toString(), date: key, title: val, groceries: [] }) }
                 localStorage.setItem('meals', JSON.stringify(meals))
                 window.dispatchEvent(new CustomEvent('meals-updated'))
               }}>
-                <option>NO MEAL</option>
-                <option>FACTOR</option>
-                <option>LEFTOVERS</option>
+                {availableMealTitles.map((t: string) => <option key={t} value={t}>{t}</option>)}
               </select>
-              <button className="btn btn-ghost" onClick={()=>{ alert('Apply to multiple days: (not implemented)') }}>Apply to multiple days</button>
+              <button className="btn btn-ghost" onClick={() => {
+                if (!multiOpen) {
+                  // open panel and preselect current day
+                  const key = toKey(selectedDate)
+                  setMultiSelected({ [key]: true })
+                  setMultiOpen(true)
+                } else {
+                  // confirm apply to selected days, then close
+                  const meals = JSON.parse(localStorage.getItem('meals')||'[]')
+                  const keys = Object.keys(multiSelected).filter(k => multiSelected[k])
+                  const now = Date.now().toString()
+                  keys.forEach((k, i) => {
+                    const idx = meals.findIndex((m:any)=>m.date===k)
+                    if (idx>=0) { meals[idx].title = mealChoice } else { meals.push({ id: now + i, date: k, title: mealChoice, groceries: [] }) }
+                  })
+                  localStorage.setItem('meals', JSON.stringify(meals))
+                  window.dispatchEvent(new CustomEvent('meals-updated'))
+                  setMultiOpen(false)
+                }
+              }}>{multiOpen ? 'Confirm apply' : 'Apply to multiple days'}</button>
             </div>
+            {multiOpen && (
+              <div className="multi-apply-panel">
+                <div className="select-all">
+                  <label><input type="checkbox" checked={weekDates(selectedDate).every(d => multiSelected[toKey(d)])} onChange={(e)=>{
+                    const checked = e.currentTarget.checked
+                    const obj: Record<string,boolean> = {}
+                    weekDates(selectedDate).forEach(d => obj[toKey(d)] = checked)
+                    setMultiSelected(obj)
+                  }} /> Select all (this week)</label>
+                </div>
+                <div className="week-checkboxes">
+                  {weekDates(selectedDate).map((d, idx) => (
+                    <label key={toKey(d)} className="week-day">
+                      <input type="checkbox" checked={!!multiSelected[toKey(d)]} onChange={(e)=>{
+                        const key = toKey(d)
+                        setMultiSelected(s => ({ ...s, [key]: e.currentTarget.checked }))
+                      }} />
+                      <span className="wd-name">{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][idx]}</span>
+                      <span className="wd-date">{d.getMonth()+1}/{d.getDate()}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="meal-ingredients">
               Ingredients: {(() => { const m = JSON.parse(localStorage.getItem('meals')||'[]').find((mm:any)=>mm.date===selectedDate.toISOString().slice(0,10)); return m && m.groceries ? m.groceries.join(', ') : 'None' })()}
             </div>
