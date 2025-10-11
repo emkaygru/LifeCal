@@ -1,14 +1,14 @@
-export default async function handler(request) {
+module.exports = async function handler(req, res) {
   try {
-    const id = new URL(request.url).searchParams.get('id')
+    const id = req.query.id
     const key = process.env.SPOONACULAR_KEY
-    if (!id || !key) return new Response(JSON.stringify({}), { headers: { 'Content-Type': 'application/json' } })
+    if (!id || !key) return res.json({})
 
     const api = `https://api.spoonacular.com/recipes/${encodeURIComponent(id)}/information?includeNutrition=false&apiKey=${key}`
-    const res = await fetch(api)
-    const json = await res.json()
-    return new Response(JSON.stringify(json), { headers: { 'Content-Type': 'application/json' } })
+    const upstream = await fetch(api)
+    const json = await upstream.json()
+    res.json(json)
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+    res.status(500).json({ error: String(err) })
   }
 }
