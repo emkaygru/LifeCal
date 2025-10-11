@@ -7,6 +7,15 @@ const CACHE = new Map()
 const CACHE_TTL_MS = (process.env.ICAL_CACHE_TTL ? Number(process.env.ICAL_CACHE_TTL) : 60) * 1000 // default 60s
 const MAX_BODY_BYTES = process.env.ICAL_MAX_BYTES ? Number(process.env.ICAL_MAX_BYTES) : 1024 * 1024 // default 1MB
 
+// Allowlist handling: comma-separated host suffixes (e.g. "icloud.com,google.com").
+// If not set, default to only allow icloud published calendars.
+const ALLOWLIST = (process.env.ICAL_ALLOWLIST_HOSTS || 'icloud.com').split(',').map(s => s.trim()).filter(Boolean)
+
+// Rate limiting: simple token-bucket per IP (in-memory)
+const RATE_BUCKETS = new Map()
+const RATE_CAPACITY = process.env.ICAL_RATE_CAPACITY ? Number(process.env.ICAL_RATE_CAPACITY) : 10
+const RATE_REFILL_PER_SEC = process.env.ICAL_RATE_REFILL_PER_SEC ? Number(process.env.ICAL_RATE_REFILL_PER_SEC) : 1
+
 function isPrivateIPv4(ip) {
   // ip is dotted quad
   try {
@@ -297,6 +306,36 @@ module.exports = async function handler(req, res) {
     /* ignore header push errors */
   }
 
+  // Rate limiting (token bucket per IP)
+  try {
+    const ip = req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : (req.connection && req.connection.remoteAddress) || req.socket && req.socket.remoteAddress || 'unknown'
+    let bucket = RATE_BUCKETS.get(ip)
+    const now = Date.now() / 1000
+    if (!bucket) {
+      bucket = { tokens: RATE_CAPACITY, last: now }
+    }
+    // refill
+    const delta = Math.max(0, now - bucket.last)
+    bucket.tokens = Math.min(RATE_CAPACITY, bucket.tokens + delta * RATE_REFILL_PER_SEC)
+    bucket.last = now
+    if (bucket.tokens < 1) {
+      return res.status(429).send('Rate limit exceeded')
+    }
+    bucket.tokens -= 1
+    RATE_BUCKETS.set(ip, bucket)
+  } catch (e) { /* ignore rate errors */ }
+
+  // Allowlist host check
+  try {
+    if (targetUrlObj && targetUrlObj.hostname && ALLOWLIST.length > 0) {
+      const ok = ALLOWLIST.some(suffix => targetUrlObj.hostname.endsWith(suffix))
+      if (!ok) {
+        try { console.error('[fetch-ical] host not allowlisted', { hostname: targetUrlObj.hostname, allowlist: ALLOWLIST }) } catch (e) {}
+        return res.status(403).send('Hostname not allowed')
+      }
+    }
+  } catch (e) { /* ignore allowlist errors */ }
+
   // SSRF safety: ensure https only and disallow private/internal addresses
   try {
     if (!/^https:/i.test(sanitizedFetchUrl)) {
@@ -314,12 +353,20 @@ module.exports = async function handler(req, res) {
     return res.status(400).send('Invalid target')
   }
 
-  // Cache check
+  // Cache check (including ETag handling)
   try {
     const cached = CACHE.get(sanitizedFetchUrl)
     if (cached && (Date.now() - cached.ts) < CACHE_TTL_MS) {
+      // If client sent If-None-Match and ETag matches, return 304
+      const ifNone = req.headers['if-none-match'] || req.headers['If-None-Match']
+      if (ifNone && cached.etag && String(ifNone).trim() === String(cached.etag).trim()) {
+        res.setHeader('Cache-Control', `public, max-age=${Math.round(CACHE_TTL_MS/1000)}, s-maxage=${Math.round(CACHE_TTL_MS/1000)}`)
+        res.status(304).end()
+        return
+      }
       // serve cached
       res.setHeader('Content-Type', cached.headers['content-type'] || 'text/calendar; charset=utf-8')
+      if (cached.etag) res.setHeader('ETag', String(cached.etag))
       res.setHeader('Cache-Control', `public, max-age=${Math.round(CACHE_TTL_MS/1000)}, s-maxage=${Math.round(CACHE_TTL_MS/1000)}`)
       res.status(cached.status || 200).send(cached.body)
       return
@@ -344,11 +391,14 @@ module.exports = async function handler(req, res) {
       }
       // success - read with limit
       const text = await readLimitedText(upstream, MAX_BODY_BYTES)
+      // capture ETag if present
+      const etag = upstream.headers && upstream.headers.get ? upstream.headers.get('etag') : null
       // cache the result
       try {
-        CACHE.set(sanitizedFetchUrl, { ts: Date.now(), status: upstream.status, headers: { 'content-type': upstream.headers && upstream.headers.get ? upstream.headers.get('content-type') : 'text/calendar; charset=utf-8' }, body: text })
+        CACHE.set(sanitizedFetchUrl, { ts: Date.now(), status: upstream.status, headers: { 'content-type': upstream.headers && upstream.headers.get ? upstream.headers.get('content-type') : 'text/calendar; charset=utf-8' }, body: text, etag })
       } catch (e) { /* ignore cache set errors */ }
       res.setHeader('Content-Type', upstream.headers && upstream.headers.get ? upstream.headers.get('content-type') || 'text/calendar; charset=utf-8' : 'text/calendar; charset=utf-8')
+      if (etag) res.setHeader('ETag', String(etag))
       res.setHeader('X-Debug-Invoked', 'fetch-ical')
       res.setHeader('Cache-Control', `public, max-age=${Math.round(CACHE_TTL_MS/1000)}, s-maxage=${Math.round(CACHE_TTL_MS/1000)}`)
       res.send(text)
@@ -368,3 +418,28 @@ module.exports = async function handler(req, res) {
     res.status(500).json({ error: 'Internal Server Error', message: error.message });
   }
 }
+
+// Expose internals for tests (only when required)
+try {
+  module.exports._internals = {
+    _sanitizeInput: (rawParam) => {
+      let decoded = String(rawParam || '')
+      try { if (/%[0-9A-Fa-f]{2}/.test(decoded)) { decoded = decodeURIComponent(decoded) } } catch (e) {}
+      try {
+        if (decoded && !/^https?:|^webcal:/i.test(decoded) && /%[0-9A-Fa-f]{2}/.test(decoded)) {
+          try { const decodedTwice = decodeURIComponent(decoded); if (decodedTwice) decoded = decodedTwice } catch (e) {}
+        }
+      } catch (e) {}
+      try {
+        if (!/^https?:|^webcal:/i.test(decoded) && /webcal%3A/i.test(String(rawParam))) {
+          try { const replaced = String(rawParam).replace(/webcal%3A/ig, 'https%3A'); const rdec = decodeURIComponent(replaced); if (rdec) decoded = rdec } catch (e) {}
+        }
+      } catch (e) {}
+      const fetchUrl = decoded.replace(/^webcal:/i, 'https:')
+      const sanitizedFetchUrl = String(fetchUrl || '').trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+      return sanitizedFetchUrl
+    },
+    _CACHE: CACHE,
+    _ALLOWLIST: ALLOWLIST
+  }
+} catch (e) {}

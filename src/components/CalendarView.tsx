@@ -19,53 +19,62 @@ const PUBLIC_ICAL_URL = 'https://p131-caldav.icloud.com/published/2/MjEwMDk1ODQy
 
 export default function CalendarView({ selectedDate: selectedKey, onSelectDate }: { selectedDate?: string | null; onSelectDate?: (k: string) => void }) {
   const [events, setEvents] = useState<EventItem[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [view, setView] = useState<'month'|'week'|'day'>('month')
   const [todosList, setTodosList] = useState<any[]>(getTodos())
 
+  // Helper: base64 encode that works in browser & node
+  const base64Encode = (s: string) => {
+    if (typeof window !== 'undefined' && (window as any).btoa) return (window as any).btoa(s)
+    try { return Buffer.from(s).toString('base64') } catch (_) { return '' }
+  }
+
   // Fetch public calendar via the server proxy to avoid CORS errors.
+  const fetchCalendar = async () => {
+    setLoading(true)
+    setFetchError(null)
+    try {
+      // base64 the URL and call our proxy which is same-origin
+      const b64 = base64Encode(PUBLIC_ICAL_URL)
+      const res = await fetch(`/api/fetch-ical?b64=${encodeURIComponent(b64)}`)
+      if (!res.ok) throw new Error('Fetch failed: ' + res.status)
+      const data = await res.text()
+
+      try {
+        const jcal = ICAL.parse(data)
+        const comp = new ICAL.Component(jcal)
+        const vevents = comp.getAllSubcomponents('vevent')
+        const parsed = vevents.map((v: any) => {
+          const e = new ICAL.Event(v)
+          return {
+            id: e.uid,
+            title: e.summary || 'Event',
+            start: e.startDate.toJSDate(),
+            end: e.endDate.toJSDate(),
+            description: e.description
+          }
+        })
+        // sort by start date ascending
+        parsed.sort((a, b) => a.start.getTime() - b.start.getTime())
+        setEvents(parsed)
+      } catch (err) {
+        console.error('ical parse err', err)
+        setFetchError('Failed to parse calendar data')
+        setEvents([])
+      }
+    } catch (err) {
+      console.error('calendar fetch failed', err)
+      setFetchError(String(err))
+      setEvents([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (!PUBLIC_ICAL_URL) return
-
-    const base64Encode = (s: string) => {
-      if (typeof window !== 'undefined' && window.btoa) return window.btoa(s)
-      try { return Buffer.from(s).toString('base64') } catch (_) { return '' }
-    }
-
-    const fetchCalendar = async () => {
-      try {
-        // base64 the URL and call our proxy which is same-origin
-        const b64 = base64Encode(PUBLIC_ICAL_URL)
-        const res = await fetch(`/api/fetch-ical?b64=${encodeURIComponent(b64)}`)
-        if (!res.ok) throw new Error('Fetch failed: ' + res.status)
-        const data = await res.text()
-
-        try {
-          const jcal = ICAL.parse(data)
-          const comp = new ICAL.Component(jcal)
-          const vevents = comp.getAllSubcomponents('vevent')
-          const parsed = vevents.map((v: any) => {
-            const e = new ICAL.Event(v)
-            return {
-              id: e.uid,
-              title: e.summary || 'Event',
-              start: e.startDate.toJSDate(),
-              end: e.endDate.toJSDate(),
-              description: e.description
-            }
-          })
-          setEvents(parsed)
-        } catch (err) {
-          console.error('ical parse err', err)
-          setFetchError('Failed to parse calendar data')
-        }
-      } catch (err) {
-        console.error('calendar fetch failed', err)
-        setFetchError(String(err))
-      }
-    }
-
     fetchCalendar()
   }, [])
 
@@ -91,6 +100,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   const daysInMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate()
 
   const monthDays = Array.from({ length: daysInMonth }, (_, i) => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i + 1))
+  const monthStartOffset = startOfMonth.getDay() // 0=Sun..6=Sat
 
   function todosForDay(d: Date) {
     const key = d.toISOString().slice(0,10)
@@ -127,6 +137,26 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
 
   return (
     <div className="calendar">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ fontSize: 14, color: '#333' }}>
+          Upcoming: {events.length === 0 ? '—' : `${events.length} events`}
+        </div>
+        <div>
+          <button onClick={() => fetchCalendar()} disabled={loading} style={{ marginRight: 8 }}>{loading ? 'Refreshing...' : 'Refresh'}</button>
+        </div>
+      </div>
+
+      {/* Compact upcoming list */}
+      {events.length > 0 && (
+        <div className="upcoming-list" style={{ marginBottom: 12 }}>
+          {events.slice(0,5).map(ev => (
+            <div key={ev.id} style={{ padding: 6, borderBottom: '1px solid #eee' }}>
+              <div style={{ fontWeight: 600 }}>{ev.title}</div>
+              <div style={{ fontSize: 12, color: '#666' }}>{ev.start.toLocaleString()} — {ev.end.toLocaleTimeString()}</div>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="calendar-header">
         <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))}>{'<'}</button>
         <h2>{selectedDate.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</h2>
@@ -145,6 +175,11 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d} className="weekday">{d}</div>)}
           </div>
           <div className="month-grid">
+            {/** Render leading empty cells so the 1st lines up with the correct weekday */}
+            {Array.from({ length: monthStartOffset }).map((_, i) => (
+              <div key={`empty-${i}`} className="day-cell empty" />
+            ))}
+
             {monthDays.map((d) => (
               <div key={d.toISOString()} className="day-cell" onClick={() => { setSelectedDate(d); onSelectDate?.(toKey(d)) }} onDrop={(e) => handleDrop(e, d)} onDragOver={allowDrop}>
                 <div className="date-num">{d.getDate()}</div>

@@ -43,3 +43,22 @@ for (const ex of examples) {
 }
 
 console.log('fetch-ical parse tests passed')
+
+// Additional integration-ish tests using exported internals
+const handlerModule = require('../api/fetch-ical.js')
+if (handlerModule && handlerModule._internals) {
+  const intern = handlerModule._internals
+  // sanitize helper
+  assert.strictEqual(intern._sanitizeInput('https%3A%2F%2Fexample.com%2Fpath'), 'https://example.com/path')
+  // allowlist should contain icloud.com by default
+  assert.ok(Array.isArray(intern._ALLOWLIST) && intern._ALLOWLIST.includes('icloud.com'), 'allowlist must include icloud.com')
+
+  // Cache set/get behavior: emulate a cache entry
+  const testUrl = 'https://example.com/test.ics'
+  intern._CACHE.set(testUrl, { ts: Date.now(), status: 200, headers: { 'content-type': 'text/calendar; charset=utf-8' }, body: 'BEGIN:VCALENDAR', etag: 'W/"1"' })
+  const cached = intern._CACHE.get(testUrl)
+  assert.ok(cached && cached.body && cached.etag === 'W/"1"')
+  console.log('internals tests passed')
+} else {
+  console.log('internals not available; skipping integration-ish tests')
+}
