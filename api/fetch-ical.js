@@ -8,6 +8,24 @@ module.exports = async function handler(req, res) {
   // - missing and present in the raw req.url's search params
   let rawParam = undefined
   try {
+    // If this is a POST with JSON, try to read body first to avoid URL encoding issues.
+    if (req.method === 'POST') {
+      try {
+        const ct = req.headers && (req.headers['content-type'] || req.headers['Content-Type'])
+        if (ct && ct.indexOf && ct.indexOf('application/json') !== -1) {
+          const chunks = []
+          for await (const chunk of req) chunks.push(chunk)
+          const buf = Buffer.concat(chunks)
+          const parsed = JSON.parse(buf.toString('utf8'))
+          if (parsed && parsed.url) rawParam = parsed.url
+          if (!rawParam && parsed && parsed.b64) {
+            try { rawParam = Buffer.from(String(parsed.b64).replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8') } catch (e) {}
+          }
+        }
+      } catch (e) {
+        try { console.error('[fetch-ical] post body parse failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
+      }
+    }
     // Support a base64-encoded URL fallback to avoid percent-encoding issues.
     // Caller can send `?b64=<base64(url)>` where url is e.g. https://... or webcal://...
     const getB64 = (r) => {
