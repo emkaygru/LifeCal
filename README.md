@@ -10,6 +10,9 @@ Quick start
 npm install
 ```
 
+---
+Redeploy trigger: 2025-10-11T01:28:00Z
+
 2. Run dev server
 
 ```bash
