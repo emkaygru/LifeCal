@@ -1,3 +1,84 @@
+const dns = require('dns').promises
+const net = require('net')
+
+// Simple in-memory cache scoped to the server instance.
+// Note: on serverless platforms this persists only for the lifetime of the instance.
+const CACHE = new Map()
+const CACHE_TTL_MS = (process.env.ICAL_CACHE_TTL ? Number(process.env.ICAL_CACHE_TTL) : 60) * 1000 // default 60s
+const MAX_BODY_BYTES = process.env.ICAL_MAX_BYTES ? Number(process.env.ICAL_MAX_BYTES) : 1024 * 1024 // default 1MB
+
+function isPrivateIPv4(ip) {
+  // ip is dotted quad
+  try {
+    if (!ip || typeof ip !== 'string') return false
+    const parts = ip.split('.').map(n => Number(n))
+    if (parts.length !== 4 || parts.some(p => Number.isNaN(p))) return false
+    const [a,b] = parts
+    if (a === 10) return true
+    if (a === 127) return true
+    if (a === 169 && b === 254) return true
+    if (a === 192 && b === 168) return true
+    if (a === 172 && b >= 16 && b <= 31) return true
+    return false
+  } catch (e) { return false }
+}
+
+function isPrivateIp(ip) {
+  if (!ip) return false
+  if (net.isIP(ip) === 4) return isPrivateIPv4(ip)
+  // IPv6 checks: loopback ::1, link-local fe80::/10, unique local fc00::/7
+  if (net.isIP(ip) === 6) {
+    const norm = ip.toLowerCase()
+    if (norm === '::1') return true
+    if (norm.startsWith('fe80') || norm.startsWith('fe80:')) return true
+    if (norm.startsWith('fc') || norm.startsWith('fd')) return true
+    return false
+  }
+  return false
+}
+
+async function ensureSafeHostname(hostname) {
+  // Resolve hostname and ensure none of the addresses are in private ranges.
+  try {
+    const addrs = await dns.lookup(hostname, { all: true })
+    for (const a of addrs) {
+      if (isPrivateIp(a.address)) return false
+    }
+    return true
+  } catch (e) {
+    // If DNS fails, be conservative and return false
+    return false
+  }
+}
+
+async function readLimitedText(response, maxBytes) {
+  // If body stream is available, read it in chunks and enforce size limit.
+  try {
+    if (response.body && typeof response.body.getReader === 'function') {
+      const reader = response.body.getReader()
+      let received = 0
+      const chunks = []
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = Buffer.from(value)
+        received += chunk.length
+        if (received > maxBytes) {
+          try { reader.cancel && reader.cancel() } catch (e) {}
+          throw new Error('Upstream response too large')
+        }
+        chunks.push(chunk)
+      }
+      return Buffer.concat(chunks).toString('utf8')
+    }
+  } catch (e) {
+    // fallback to text()
+  }
+  const txt = await response.text()
+  if (txt.length > maxBytes) throw new Error('Upstream response too large')
+  return txt
+}
+
 module.exports = async function handler(req, res) {
   try {
   // Verbose logging controlled by env var to avoid noisy production logs.
@@ -216,6 +297,35 @@ module.exports = async function handler(req, res) {
     /* ignore header push errors */
   }
 
+  // SSRF safety: ensure https only and disallow private/internal addresses
+  try {
+    if (!/^https:/i.test(sanitizedFetchUrl)) {
+      return res.status(400).send('Only https URLs are allowed')
+    }
+    if (targetUrlObj && targetUrlObj.hostname) {
+      const ok = await ensureSafeHostname(targetUrlObj.hostname)
+      if (!ok) {
+        try { console.error('[fetch-ical] blocked private/internal hostname', { hostname: targetUrlObj.hostname }) } catch (e) {}
+        return res.status(400).send('Hostname resolves to a private or disallowed IP')
+      }
+    }
+  } catch (e) {
+    try { console.error('[fetch-ical] ssrf check failed', e && e.stack ? e.stack : String(e)) } catch (e) {}
+    return res.status(400).send('Invalid target')
+  }
+
+  // Cache check
+  try {
+    const cached = CACHE.get(sanitizedFetchUrl)
+    if (cached && (Date.now() - cached.ts) < CACHE_TTL_MS) {
+      // serve cached
+      res.setHeader('Content-Type', cached.headers['content-type'] || 'text/calendar; charset=utf-8')
+      res.setHeader('Cache-Control', `public, max-age=${Math.round(CACHE_TTL_MS/1000)}, s-maxage=${Math.round(CACHE_TTL_MS/1000)}`)
+      res.status(cached.status || 200).send(cached.body)
+      return
+    }
+  } catch (e) { /* ignore cache errors */ }
+
   let lastStatus = null
   let lastBodySnippet = ''
   try {
@@ -232,10 +342,15 @@ module.exports = async function handler(req, res) {
         // try next header set
         continue
       }
-      // success
-      const text = await upstream.text()
-      res.setHeader('Content-Type', 'text/calendar; charset=utf-8')
+      // success - read with limit
+      const text = await readLimitedText(upstream, MAX_BODY_BYTES)
+      // cache the result
+      try {
+        CACHE.set(sanitizedFetchUrl, { ts: Date.now(), status: upstream.status, headers: { 'content-type': upstream.headers && upstream.headers.get ? upstream.headers.get('content-type') : 'text/calendar; charset=utf-8' }, body: text })
+      } catch (e) { /* ignore cache set errors */ }
+      res.setHeader('Content-Type', upstream.headers && upstream.headers.get ? upstream.headers.get('content-type') || 'text/calendar; charset=utf-8' : 'text/calendar; charset=utf-8')
       res.setHeader('X-Debug-Invoked', 'fetch-ical')
+      res.setHeader('Cache-Control', `public, max-age=${Math.round(CACHE_TTL_MS/1000)}, s-maxage=${Math.round(CACHE_TTL_MS/1000)}`)
       res.send(text)
       return
     }
