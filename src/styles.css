@@ -1481,10 +1481,6 @@ button.btn + button.btn { margin-left: 8px }
 
 /* Scrapbook Canvas Styles */
 .scrapbook-canvas {
-  background: linear-gradient(135deg, 
-    rgba(var(--surface-rgb, 248, 250, 252), 0.8), 
-    rgba(var(--surface-rgb, 248, 250, 252), 0.95)
-  );
   border-radius: 12px;
   padding: 1rem;
   margin: 1rem 0;
@@ -1493,7 +1489,13 @@ button.btn + button.btn { margin-left: 8px }
   max-height: 300px;
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(10px);
+}
+
+.scrapbook-canvas h4 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .canvas-tools {
@@ -1503,7 +1505,6 @@ button.btn + button.btn { margin-left: 8px }
   margin-bottom: 0.75rem;
   justify-content: center;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   border: 1px solid var(--border);
 }
@@ -1552,11 +1553,9 @@ button.btn + button.btn { margin-left: 8px }
 .canvas-area {
   position: relative;
   height: 180px;
-  background: rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(var(--border-rgb, 229, 231, 235), 0.5);
-  backdrop-filter: blur(5px);
+  border: 1px solid var(--border);
 }
 
 .drawing-container {
@@ -1807,6 +1806,31 @@ button.btn + button.btn { margin-left: 8px }
   border-color: var(--accent);
   background: rgba(var(--accent-rgb, 0, 162, 255), 0.1);
   color: var(--accent);
+}
+
+.add-todo-inline {
+  width: 100%;
+}
+
+.todo-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px dashed var(--border);
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.todo-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  border-style: solid;
+}
+
+.todo-input::placeholder {
+  color: var(--muted);
 }
 
 .add-todo-btn {

@@ -274,33 +274,38 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
           <div className="todos-header">
             <h4>To-dos</h4>
             {todos.length === 0 ? (
-              <button 
-                className="add-todo-prompt"
-                onClick={() => {
-                  // Quick add todo functionality
-                  const todoText = prompt('Add a todo:')
-                  if (todoText?.trim()) {
-                    const newTodo = {
-                      id: Date.now().toString(),
-                      title: todoText.trim(),
-                      date: dateKey,
-                      done: false,
-                      owner: 'Emily' // Default owner, could be made dynamic
+              <div className="add-todo-inline">
+                <input 
+                  type="text"
+                  placeholder="Click to add a todo..."
+                  className="todo-input"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const todoText = (e.target as HTMLInputElement).value.trim()
+                      if (todoText) {
+                        const newTodo = {
+                          id: Date.now().toString(),
+                          title: todoText,
+                          date: dateKey,
+                          done: false,
+                          owner: 'Emily'
+                        }
+                        const allTodos = JSON.parse(localStorage.getItem('todos') || '[]')
+                        const updatedTodos = [...allTodos, newTodo]
+                        localStorage.setItem('todos', JSON.stringify(updatedTodos))
+                        setTodos(updatedTodos.filter((t: any) => t.date === dateKey))
+                        window.dispatchEvent(new CustomEvent('todos-updated'))
+                        ;(e.target as HTMLInputElement).value = ''
+                      }
                     }
-                    const allTodos = JSON.parse(localStorage.getItem('todos') || '[]')
-                    const updatedTodos = [...allTodos, newTodo]
-                    localStorage.setItem('todos', JSON.stringify(updatedTodos))
-                    setTodos(updatedTodos.filter((t: any) => t.date === dateKey))
-                    window.dispatchEvent(new CustomEvent('todos-updated'))
-                  }
-                }}
-              >
-                Click to add a todo
-              </button>
+                  }}
+                />
+              </div>
             ) : (
               <button 
                 className="add-todo-btn"
                 onClick={() => {
+                  // Add input field when there are existing todos
                   const todoText = prompt('Add a todo:')
                   if (todoText?.trim()) {
                     const newTodo = {
@@ -341,8 +346,10 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
           )}
         </div>
 
-        {/* Unified Canvas - Drawing + Stickers */}
+        {/* Notes: Whiteboard Canvas */}
         <div className="scrapbook-canvas">
+          <h4>Notes:</h4>
+          
           <div className="canvas-tools">
             <button 
               className="tool-btn"
@@ -433,17 +440,6 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
                 )}
               </div>
             ))}
-            
-            {/* Text notes overlay */}
-            <div className="canvas-notes">
-              <textarea
-                value={notes}
-                onChange={(e) => saveNotes(e.target.value)}
-                placeholder="Add notes..."
-                className="canvas-notes-input"
-                rows={2}
-              />
-            </div>
           </div>
           
           {showGiphyPicker && (
