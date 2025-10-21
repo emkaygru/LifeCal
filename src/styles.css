@@ -58,6 +58,11 @@ body{font-family: Inter, system-ui, -apple-system, 'Helvetica Neue', Arial; marg
 @keyframes glow{from{box-shadow:0 0 20px rgba(255,107,107,0.5)}to{box-shadow:0 0 30px rgba(255,107,107,0.8),0 0 40px rgba(255,107,107,0.3)}}
 .layout-controls{display:flex;align-items:center;gap:10px}
 .layout-controls label{display:flex;align-items:center;gap:6px}
+.sync-status{display:flex;align-items:center;gap:6px;margin-left:auto}
+.sync-indicator{font-size:12px;transition:transform 200ms ease}
+.sync-indicator.syncing{animation:spin 1s linear infinite}
+.sync-status small{color:var(--muted);font-size:11px}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .dashboard{display:flex;gap:12px;padding:12px;flex-wrap:wrap}
 .calendar-col{flex:1 1 480px;min-width:320px}
 .side-col{width:360px;min-width:280px}

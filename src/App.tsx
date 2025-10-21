@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import CalendarView from './components/CalendarView'
 import TodoAccordion from './components/TodoAccordion'
 import DrawingPad from './components/DrawingPad'
@@ -6,6 +6,7 @@ import GroceryList from './components/GroceryList'
 import MealPlanner from './components/MealPlanner'
 import PeopleManager from './components/PeopleManager'
 import LayoutCustomizer from './components/LayoutCustomizer'
+import { initSync } from './lib/sync'
 
 export default function App() {
   const [layout, setLayout] = useState('default')
@@ -14,10 +15,48 @@ export default function App() {
   const [user, setUser] = useState<string>(() => localStorage.getItem('user') || 'Emily')
   const [parking, setParking] = useState<string | null>(() => localStorage.getItem('parking') || null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [syncStatus, setSyncStatus] = useState<'online' | 'offline' | 'syncing'>('offline')
 
   function handleSelectDate(dateKey: string) {
     setSelectedDate(dateKey)
   }
+
+  // Initialize real-time sync
+  useEffect(() => {
+    const sync = initSync();
+    
+    // Update sync status
+    const updateSyncStatus = () => {
+      setSyncStatus(navigator.onLine ? 'online' : 'offline');
+    };
+    
+    updateSyncStatus();
+    window.addEventListener('online', updateSyncStatus);
+    window.addEventListener('offline', updateSyncStatus);
+    
+    // Listen for sync events to update UI
+    const handleTodosSync = (e: any) => {
+      setSyncStatus('syncing');
+      setTimeout(() => setSyncStatus('online'), 1000);
+      window.dispatchEvent(new CustomEvent('todos-updated'));
+    };
+    
+    const handleMealsSync = (e: any) => {
+      setSyncStatus('syncing');
+      setTimeout(() => setSyncStatus('online'), 1000);
+      window.dispatchEvent(new CustomEvent('meals-updated'));
+    };
+
+    window.addEventListener('todos-synced', handleTodosSync);
+    window.addEventListener('meals-synced', handleMealsSync);
+
+    return () => {
+      window.removeEventListener('online', updateSyncStatus);
+      window.removeEventListener('offline', updateSyncStatus);
+      window.removeEventListener('todos-synced', handleTodosSync);
+      window.removeEventListener('meals-synced', handleMealsSync);
+    };
+  }, []);
 
   return (
     <div className="app">
@@ -68,6 +107,12 @@ export default function App() {
               <option>Steph</option>
             </select>
           </label>
+        </div>
+        <div className="sync-status">
+          <span className={`sync-indicator ${syncStatus}`}>
+            {syncStatus === 'online' ? '🟢' : syncStatus === 'syncing' ? '🔄' : '🔴'}
+          </span>
+          <small>{syncStatus === 'online' ? 'Synced' : syncStatus === 'syncing' ? 'Syncing...' : 'Offline'}</small>
         </div>
       </header>
 

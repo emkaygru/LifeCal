@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vercel/kv": "^3.0.0",
     "ical.js": "^2.2.1",
     "puppeteer": "^24.24.0",
     "react": "^18.2.0",
