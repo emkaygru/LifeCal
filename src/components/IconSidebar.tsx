@@ -151,38 +151,94 @@ export default function IconSidebar({ selectedDate, parking, setParking }: IconS
           <div className="panel-content">
             <div className="notes-quick-add">
               <textarea 
-                placeholder="Create a quick note or todo..." 
+                placeholder="Write a quick note..." 
                 className="note-input"
                 rows={3}
+                id="quick-note-input"
               />
               <div className="note-actions">
-                <button className="btn btn-primary">Save as Note</button>
-                <button className="btn btn-secondary">Add to Todo</button>
-              </div>
-            </div>
-            
-            {/* Display saved notes */}
-            <div className="saved-notes">
-              <h4>Saved Notes</h4>
-              <div className="note-item" draggable>
-                <div className="note-content">
-                  <span className="note-text">Sample note that can be dragged to days</span>
-                  <span className="note-date">Oct 21</span>
+                <div className="todo-assignment">
+                  <label>Add to List:</label>
+                  <select className="list-select" id="todo-list-select">
+                    <option value="">Select list...</option>
+                    <option value="todos">Todos</option>
+                    <option value="grocery">Grocery</option>
+                    <option value="new">+ Create New List</option>
+                  </select>
+                  
+                  <label>Assign to:</label>
+                  <select className="owner-select" id="todo-owner-select">
+                    <option value="Emily">Emily</option>
+                    <option value="Steph">Steph</option>
+                    <option value="Maisie">Maisie</option>
+                  </select>
                 </div>
-                <div className="note-actions-small">
-                  <button className="drag-btn" title="Drag to calendar">⋮⋮</button>
-                  <button className="delete-btn" title="Delete">×</button>
-                </div>
-              </div>
-              
-              <div className="note-item" draggable>
-                <div className="note-content">
-                  <span className="note-text">Another note example</span>
-                  <span className="note-date">Oct 20</span>
-                </div>
-                <div className="note-actions-small">
-                  <button className="drag-btn" title="Drag to calendar">⋮⋮</button>
-                  <button className="delete-btn" title="Delete">×</button>
+                
+                <div className="action-buttons">
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      const noteInput = document.getElementById('quick-note-input') as HTMLTextAreaElement
+                      const listSelect = document.getElementById('todo-list-select') as HTMLSelectElement
+                      const ownerSelect = document.getElementById('todo-owner-select') as HTMLSelectElement
+                      
+                      if (!noteInput.value.trim()) return
+                      
+                      if (listSelect.value) {
+                        // Add to selected todo list
+                        const todoItem = {
+                          id: Date.now().toString(),
+                          text: noteInput.value.trim(),
+                          completed: false,
+                          user: ownerSelect.value,
+                          list: listSelect.value === 'new' ? prompt('Enter new list name:') || 'Custom' : listSelect.value,
+                          createdAt: new Date().toISOString()
+                        }
+                        
+                        // Save to localStorage
+                        const existingTodos = JSON.parse(localStorage.getItem('todos') || '[]')
+                        existingTodos.push(todoItem)
+                        localStorage.setItem('todos', JSON.stringify(existingTodos))
+                        
+                        // Dispatch event for UI updates
+                        window.dispatchEvent(new CustomEvent('todos-updated'))
+                        
+                        // Clear inputs
+                        noteInput.value = ''
+                        listSelect.value = ''
+                        
+                        alert(`Added "${todoItem.text}" to ${todoItem.list} list for ${todoItem.user}`)
+                      } else {
+                        alert('Please select a list to add the todo to')
+                      }
+                    }}
+                  >
+                    Add to Todo
+                  </button>
+                  
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => {
+                      const noteInput = document.getElementById('quick-note-input') as HTMLTextAreaElement
+                      if (!noteInput.value.trim()) return
+                      
+                      // Save as a standalone note
+                      const note = {
+                        id: Date.now().toString(),
+                        text: noteInput.value.trim(),
+                        createdAt: new Date().toISOString()
+                      }
+                      
+                      const existingNotes = JSON.parse(localStorage.getItem('quick-notes') || '[]')
+                      existingNotes.unshift(note) // Add to beginning
+                      localStorage.setItem('quick-notes', JSON.stringify(existingNotes))
+                      
+                      noteInput.value = ''
+                      alert('Note saved!')
+                    }}
+                  >
+                    Save as Note
+                  </button>
                 </div>
               </div>
             </div>
