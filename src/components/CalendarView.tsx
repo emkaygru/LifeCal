@@ -31,6 +31,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   const [newTodoText, setNewTodoText] = useState<string>('')
   const [newTodoOwner, setNewTodoOwner] = useState<string>('Emily')
   const [showDayView, setShowDayView] = useState<boolean>(false)
+  const [dayViewPosition, setDayViewPosition] = useState<{x: number, y: number, width: number, height: number} | undefined>()
 
   // Helper: base64 encode that works in browser & node
   const base64Encode = (s: string) => {
@@ -253,7 +254,17 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
             ))}
 
             {monthDays.map((d) => (
-              <div key={d.toISOString()} className={`day-cell ${toKey(d)===toKey(selectedDate) ? 'selected' : ''}`} onClick={() => { setSelectedDate(d); onSelectDate?.(toKey(d)) }} onDoubleClick={() => { setSelectedDate(d); setShowDayView(true) }} onDrop={(e) => handleDrop(e, d)} onDragOver={allowDrop}>
+              <div key={d.toISOString()} className={`day-cell ${toKey(d)===toKey(selectedDate) ? 'selected' : ''}`} onClick={() => { setSelectedDate(d); onSelectDate?.(toKey(d)) }} onDoubleClick={(e) => { 
+                const rect = e.currentTarget.getBoundingClientRect()
+                setDayViewPosition({
+                  x: rect.left,
+                  y: rect.top,
+                  width: rect.width,
+                  height: rect.height
+                })
+                setSelectedDate(d); 
+                setShowDayView(true) 
+              }} onDrop={(e) => handleDrop(e, d)} onDragOver={allowDrop}>
                 <div className="date-num">{d.getDate()}</div>
                 <div className="event-preview">
                   {eventsForDay(d).slice(0, 2).map((ev) => (
@@ -477,7 +488,8 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
       {showDayView && (
         <DayView 
           date={selectedDate} 
-          onClose={() => setShowDayView(false)} 
+          onClose={() => setShowDayView(false)}
+          initialPosition={dayViewPosition}
         />
       )}
     </div>

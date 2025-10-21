@@ -13,9 +13,10 @@ interface DaySticker {
 interface DayViewProps {
   date: Date
   onClose: () => void
+  initialPosition?: { x: number, y: number, width: number, height: number }
 }
 
-export default function DayView({ date, onClose }: DayViewProps) {
+export default function DayView({ date, onClose, initialPosition }: DayViewProps) {
   const [stickers, setStickers] = useState<DaySticker[]>([])
   const [showGiphyPicker, setShowGiphyPicker] = useState(false)
   const [notes, setNotes] = useState('')
@@ -23,6 +24,7 @@ export default function DayView({ date, onClose }: DayViewProps) {
   const [selectedMeal, setSelectedMeal] = useState('')
   const [isEditMode, setIsEditMode] = useState(false)
   const [holdTimer, setHoldTimer] = useState<NodeJS.Timeout | null>(null)
+  const [isAnimating, setIsAnimating] = useState(true)
 
   const dateKey = date.toISOString().split('T')[0]
 
@@ -45,6 +47,9 @@ export default function DayView({ date, onClose }: DayViewProps) {
     if (savedMeal) {
       setSelectedMeal(savedMeal)
     }
+
+    // Trigger animation
+    setTimeout(() => setIsAnimating(false), 100)
   }, [dateKey])
 
   function saveStickers(newStickers: DaySticker[]) {
@@ -131,186 +136,208 @@ export default function DayView({ date, onClose }: DayViewProps) {
 
   const isBirthday = date.getDate() === 26 && date.getMonth() === 0 // Jan 26
   const dayName = date.toLocaleDateString('en-US', { weekday: 'long' })
-  const fullDate = date.toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  })
+  const dateNumber = date.getDate()
+  const monthName = date.toLocaleDateString('en-US', { month: 'short' })
+
+  // Get todos and events for this day (mock data for now)
+  const dayTodos = [
+    { id: '1', title: 'Morning workout', done: false },
+    { id: '2', title: 'Birthday prep', done: false },
+    { id: '3', title: 'Grocery shopping', done: true }
+  ]
+
+  const dayEvents = [
+    { time: '2:00 PM', title: 'Doctor Appt' },
+    { time: '6:00 PM', title: 'Dinner with friends' }
+  ]
 
   return (
-    <div className="day-view-overlay">
-      <div className="day-view">
-        <div className="day-view-header">
-          <h2>
-            {fullDate}
-            {isBirthday && ' 🎂✨'}
-          </h2>
-          <button onClick={onClose} className="close-button">✕</button>
+    <div className="day-view-overlay" onClick={onClose}>
+      <div 
+        className={`day-card ${isAnimating ? 'zooming-in' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+        style={initialPosition ? {
+          '--initial-x': `${initialPosition.x}px`,
+          '--initial-y': `${initialPosition.y}px`,
+          '--initial-width': `${initialPosition.width}px`,
+          '--initial-height': `${initialPosition.height}px`
+        } as React.CSSProperties : {}}
+      >
+        <button onClick={onClose} className="close-btn">✕</button>
+        
+        {/* Header Section - Date and Events */}
+        <div className="day-header">
+          <div className="day-date">
+            <div className="date-number">{dateNumber}</div>
+            <div className="date-details">
+              <div className="month">{monthName}</div>
+              <div className="weekday">{dayName}</div>
+              {isBirthday && <div className="birthday-badge">🎂</div>}
+            </div>
+          </div>
+          
+          <div className="day-events">
+            <h4>Events</h4>
+            {dayEvents.length === 0 ? (
+              <div className="empty-state">No events</div>
+            ) : (
+              dayEvents.map((event, i) => (
+                <div key={i} className="event-item">
+                  <span className="event-time">{event.time}</span>
+                  <span className="event-title">{event.title}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        <div className="day-view-content">
-          {/* Top Section - Plan/Events */}
-          <section className="day-plan-section">
-            <h3>📅 Plan</h3>
-            <div className="plan-content">
-              <div className="day-events">
-                <h4>Events & Appointments</h4>
-                {/* Events would go here - we can integrate from calendar */}
-                <div className="plan-placeholder">No events scheduled</div>
+        {/* Todos Section */}
+        <div className="day-todos">
+          <h4>To-dos</h4>
+          {dayTodos.length === 0 ? (
+            <div className="empty-state">No todos</div>
+          ) : (
+            dayTodos.map((todo) => (
+              <div key={todo.id} className="todo-item">
+                <input 
+                  type="checkbox" 
+                  checked={todo.done}
+                  onChange={() => {/* Handle todo toggle */}}
+                />
+                <span className={`todo-text ${todo.done ? 'done' : ''}`}>
+                  {todo.title}
+                </span>
               </div>
-            </div>
-          </section>
+            ))
+          )}
+        </div>
 
-          {/* Middle Section - Freeform Canvas with Stickers & Drawing */}
-          <section className="day-canvas-section">
-            <h3>🎨 Creative Canvas</h3>
-            <div className="freeform-canvas">
-              {/* Stickers on canvas */}
-              {stickers.map((sticker) => (
-                <div
-                  key={sticker.id}
-                  className={`canvas-sticker ${isEditMode ? 'shake' : ''}`}
-                  style={{ 
-                    left: sticker.x + 'px', 
-                    top: sticker.y + 'px' 
-                  }}
-                  draggable
-                  onMouseDown={(e) => handleStickerMouseDown(sticker.id, e)}
-                  onMouseUp={handleStickerMouseUp}
-                  onMouseLeave={handleStickerMouseUp}
-                  onDragEnd={(e) => {
-                    const rect = e.currentTarget.parentElement!.getBoundingClientRect()
-                    const x = Math.max(0, Math.min(e.clientX - rect.left - 25, rect.width - 50))
-                    const y = Math.max(0, Math.min(e.clientY - rect.top - 25, rect.height - 50))
-                    moveSticker(sticker.id, x, y)
-                  }}
-                  title={sticker.title}
-                >
-                  {sticker.url ? (
-                    <img src={sticker.url} alt={sticker.title} />
-                  ) : (
-                    <span className="emoji-sticker">{sticker.title}</span>
-                  )}
-                  
-                  {isEditMode && (
-                    <button 
-                      className="delete-sticker-btn"
-                      onClick={() => removeSticker(sticker.id)}
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              {/* Add sticker controls */}
-              <div className="canvas-controls">
-                <button 
-                  className="add-sticker-btn"
-                  onClick={() => setShowGiphyPicker(!showGiphyPicker)}
-                >
-                  {showGiphyPicker ? '✕ Close' : '✨ Add Sticker'}
-                </button>
-                
-                {/* Quick emoji stickers */}
-                <div className="quick-emojis">
-                  {['🎂', '🎉', '✨', '💖', '🎁', '🌟'].map((emoji) => (
-                    <button
-                      key={emoji}
-                      className="quick-emoji-btn"
-                      onClick={() => {
-                        const newSticker: DaySticker = {
-                          id: `emoji-${Date.now()}-${emoji}`,
-                          url: '',
-                          title: emoji,
-                          x: Math.random() * 300 + 50,
-                          y: Math.random() * 200 + 50
-                        }
-                        saveStickers([...stickers, newSticker])
-                      }}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
+        {/* Creative Canvas Section */}
+        <div className="day-canvas">
+          <div className="canvas-area">
+            {/* Stickers on canvas */}
+            {stickers.map((sticker) => (
+              <div
+                key={sticker.id}
+                className={`canvas-sticker ${isEditMode ? 'shake' : ''}`}
+                style={{ 
+                  left: sticker.x + 'px', 
+                  top: sticker.y + 'px' 
+                }}
+                draggable
+                onMouseDown={(e) => handleStickerMouseDown(sticker.id, e)}
+                onMouseUp={handleStickerMouseUp}
+                onMouseLeave={handleStickerMouseUp}
+                onDragEnd={(e) => {
+                  const rect = e.currentTarget.parentElement!.getBoundingClientRect()
+                  const x = Math.max(0, Math.min(e.clientX - rect.left - 25, rect.width - 50))
+                  const y = Math.max(0, Math.min(e.clientY - rect.top - 25, rect.height - 50))
+                  moveSticker(sticker.id, x, y)
+                }}
+                title={sticker.title}
+              >
+                {sticker.url ? (
+                  <img src={sticker.url} alt={sticker.title} />
+                ) : (
+                  <span className="emoji-sticker">{sticker.title}</span>
+                )}
                 
                 {isEditMode && (
                   <button 
-                    className="exit-edit-btn"
-                    onClick={() => setIsEditMode(false)}
+                    className="delete-sticker-btn"
+                    onClick={() => removeSticker(sticker.id)}
                   >
-                    ✓ Done Editing
+                    ✕
                   </button>
                 )}
               </div>
+            ))}
+            
+            {/* Canvas Controls */}
+            <div className="canvas-tools">
+              <button 
+                className="tool-btn"
+                onClick={() => setShowGiphyPicker(!showGiphyPicker)}
+              >
+                ✨
+              </button>
               
-              {showGiphyPicker && (
-                <div className="giphy-picker-overlay">
-                  <GiphyPicker 
-                    onSelect={addSticker}
-                    searchTerm={isBirthday ? 'birthday celebration' : 'happy'}
-                  />
-                </div>
+              {['🎂', '🎉', '✨', '💖'].map((emoji) => (
+                <button
+                  key={emoji}
+                  className="emoji-btn"
+                  onClick={() => {
+                    const newSticker: DaySticker = {
+                      id: `emoji-${Date.now()}-${emoji}`,
+                      url: '',
+                      title: emoji,
+                      x: Math.random() * 200 + 20,
+                      y: Math.random() * 150 + 20
+                    }
+                    saveStickers([...stickers, newSticker])
+                  }}
+                >
+                  {emoji}
+                </button>
+              ))}
+              
+              {isEditMode && (
+                <button 
+                  className="tool-btn done-btn"
+                  onClick={() => setIsEditMode(false)}
+                >
+                  ✓
+                </button>
               )}
             </div>
-          </section>
-
-          {/* Drawing Section */}
-          <section className="day-drawing-section">
-            <h3>✏️ Drawing & Sketches</h3>
-            <div className="drawing-container">
-              <DrawingPad 
-                onSave={saveDrawing}
-                initialDrawing={drawing}
-                storageKey={`drawing-${dateKey}`}
-              />
-            </div>
-          </section>
-
-          {/* Notes Section */}
-          <section className="day-notes-section">
-            <h3>📝 Notes & Thoughts</h3>
+          </div>
+          
+          {/* Notes area */}
+          <div className="notes-area">
             <textarea
               value={notes}
               onChange={(e) => saveNotes(e.target.value)}
-              placeholder={isBirthday ? "Birthday thoughts, memories, wishes... 🎂" : "What's on your mind today?"}
-              className="day-notes-textarea"
+              placeholder="Quick notes..."
+              className="notes-input"
               rows={3}
             />
-          </section>
-
-          {/* Meal Plan Section - At Bottom */}
-          <section className="day-meal-section">
-            <h3>🍽️ Meal Plan</h3>
-            <div className="meal-plan-content">
-              <select 
-                value={selectedMeal} 
-                onChange={(e) => saveMeal(e.target.value)}
-                className="meal-select"
-              >
-                <option value="">No meal planned</option>
-                <option value="FACTOR">FACTOR</option>
-                <option value="Pasta Night">Pasta Night</option>
-                <option value="Pizza">Pizza</option>
-                <option value="Tacos">Tacos</option>
-                <option value="Salad">Salad</option>
-                <option value="Stir Fry">Stir Fry</option>
-                <option value="Soup">Soup</option>
-                <option value="Leftovers">Leftovers</option>
-                <option value="Takeout">Takeout</option>
-                <option value="Date Night">Date Night</option>
-              </select>
-              
-              {selectedMeal && (
-                <div className="meal-display">
-                  <strong>Tonight's Plan:</strong> {selectedMeal}
-                  {selectedMeal === 'FACTOR' && ' 📦'}
-                  {isBirthday && ' 🎂'}
-                </div>
-              )}
+          </div>
+          
+          {showGiphyPicker && (
+            <div className="giphy-picker-popup">
+              <GiphyPicker 
+                onSelect={addSticker}
+                searchTerm={isBirthday ? 'birthday celebration' : 'happy'}
+              />
             </div>
-          </section>
+          )}
+        </div>
+
+        {/* Meal Plan Section - Bottom */}
+        <div className="day-meal">
+          <h4>Meal Plan</h4>
+          <div className="meal-content">
+            <select 
+              value={selectedMeal} 
+              onChange={(e) => saveMeal(e.target.value)}
+              className="meal-select"
+            >
+              <option value="">No meal planned</option>
+              <option value="FACTOR">FACTOR 📦</option>
+              <option value="Pasta Night">Pasta Night 🍝</option>
+              <option value="Pizza">Pizza 🍕</option>
+              <option value="Tacos">Tacos 🌮</option>
+              <option value="Date Night">Date Night 💕</option>
+              <option value="Takeout">Takeout 🥡</option>
+            </select>
+            
+            {selectedMeal && (
+              <div className="meal-display">
+                {selectedMeal}
+                {isBirthday && ' 🎂'}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
