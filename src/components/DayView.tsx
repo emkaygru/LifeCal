@@ -285,14 +285,14 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
         {/* Unified Scrapbook Canvas - Drawing + Stickers + Notes */}
         <div className="scrapbook-canvas">
           <div className="canvas-header">
-            <h4>Scrapbook & Notes</h4>
+            <h4>Notes:</h4>
             <div className="canvas-tools">
               <button 
                 className="tool-btn"
                 onClick={() => setShowGiphyPicker(!showGiphyPicker)}
                 title="Add GIF/Sticker"
               >
-                ✨ Stickers
+                ✨
               </button>
               
               {['🎂', '🎉', '✨', '💖', '📝', '❤️'].map((emoji) => (
@@ -304,8 +304,8 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
                       id: `emoji-${Date.now()}-${emoji}`,
                       url: '',
                       title: emoji,
-                      x: Math.random() * 250 + 20,
-                      y: Math.random() * 150 + 20
+                      x: Math.random() * 200 + 20,
+                      y: Math.random() * 120 + 20
                     }
                     saveStickers([...stickers, newSticker])
                   }}
@@ -320,7 +320,7 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
                   onClick={() => setIsEditMode(!isEditMode)}
                   title="Edit mode"
                 >
-                  {isEditMode ? '✓ Done' : '✏️ Edit'}
+                  {isEditMode ? '✓' : '✏️'}
                 </button>
               )}
             </div>
@@ -356,9 +356,9 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
                 title={sticker.title}
               >
                 {sticker.url ? (
-                  <img src={sticker.url} alt={sticker.title} style={{width: '50px', height: '50px', borderRadius: '4px'}} />
+                  <img src={sticker.url} alt={sticker.title} style={{width: '40px', height: '40px', borderRadius: '4px'}} />
                 ) : (
-                  <span className="emoji-sticker" style={{fontSize: '2rem'}}>{sticker.title}</span>
+                  <span className="emoji-sticker" style={{fontSize: '1.5rem'}}>{sticker.title}</span>
                 )}
                 
                 {isEditMode && (
@@ -377,7 +377,7 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
               <textarea
                 value={notes}
                 onChange={(e) => saveNotes(e.target.value)}
-                placeholder="Add notes to your day..."
+                placeholder="Add notes..."
                 className="canvas-notes-input"
                 rows={2}
               />
