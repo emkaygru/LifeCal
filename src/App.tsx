@@ -6,6 +6,8 @@ import GroceryList from './components/GroceryList'
 import MealPlanner from './components/MealPlanner'
 import PeopleManager from './components/PeopleManager'
 import LayoutCustomizer from './components/LayoutCustomizer'
+import EnhancedFAB from './components/EnhancedFAB'
+import IconSidebar from './components/IconSidebar'
 import { initSync } from './lib/sync'
 
 export default function App() {
@@ -14,7 +16,6 @@ export default function App() {
   const [theme, setTheme] = useState<'dark'|'light'>(() => (localStorage.getItem('theme') as any) || 'dark')
   const [user, setUser] = useState<string>(() => localStorage.getItem('user') || 'Emily')
   const [parking, setParking] = useState<string | null>(() => localStorage.getItem('parking') || null)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [syncStatus, setSyncStatus] = useState<'online' | 'offline' | 'syncing'>('offline')
 
   function handleSelectDate(dateKey: string) {
@@ -121,38 +122,12 @@ export default function App() {
           <CalendarView selectedDate={selectedDate} onSelectDate={handleSelectDate} />
         </section>
 
-        <aside className="side-col">
-          <LayoutCustomizer onChangeOrder={(order) => setLayout(order)} />
-          <PeopleManager />
-          <MealPlanner selectedDate={selectedDate} />
-          <TodoAccordion selectedDate={selectedDate} />
-          <GroceryList />
-          <DrawingPad />
-        </aside>
+        {/* Icon-based Sidebar for Desktop/Tablet */}
+        <IconSidebar selectedDate={selectedDate} />
       </main>
 
-      {/* Mobile Floating Action Button */}
-      <div className="mobile-fab">
-        <button 
-          className={`fab-main ${mobileMenuOpen ? 'open' : ''}`}
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          +
-        </button>
-        {mobileMenuOpen && (
-          <div className="fab-menu">
-            <button className="fab-item" onClick={() => { alert('Add Todo'); setMobileMenuOpen(false) }}>
-              📝 Todo
-            </button>
-            <button className="fab-item" onClick={() => { alert('Add Meal'); setMobileMenuOpen(false) }}>
-              🍽️ Meal
-            </button>
-            <button className="fab-item" onClick={() => { alert('Add Grocery'); setMobileMenuOpen(false) }}>
-              🛒 Grocery
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Enhanced Mobile Floating Action Button */}
+      <EnhancedFAB selectedDate={selectedDate} />
     </div>
   )
 }

@@ -44,7 +44,6 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
     setLoading(true)
     setFetchError(null)
     try {
-      // base64 the URL and call our proxy which is same-origin
       const b64 = base64Encode(PUBLIC_ICAL_URL)
       const res = await fetch(`/api/fetch-ical?b64=${encodeURIComponent(b64)}`)
       if (!res.ok) throw new Error('Fetch failed: ' + res.status)
@@ -64,16 +63,15 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
             description: e.description
           }
         })
-  // sort by start date ascending
-  parsed.sort((a, b) => a.start.getTime() - b.start.getTime())
 
-  // Drop events that ended before today. We only want current/new/updated events
-  // moving forward (inclusive of today).
-  const todayStart = new Date()
-  todayStart.setHours(0,0,0,0)
-  const futureEvents = parsed.filter(ev => ev.end.getTime() >= todayStart.getTime())
+        parsed.sort((a, b) => a.start.getTime() - b.start.getTime())
 
-  setEvents(futureEvents)
+        // Drop events that ended before today. We only want current/new/updated events
+        const todayStart = new Date()
+        todayStart.setHours(0,0,0,0)
+        const futureEvents = parsed.filter(ev => ev.end.getTime() >= todayStart.getTime())
+
+        setEvents(futureEvents)
       } catch (err) {
         console.error('ical parse err', err)
         setFetchError('Failed to parse calendar data')
@@ -181,12 +179,11 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
     return 'event-default'
   }
 
-  // week helpers (Mon-Sun)
+  // week helpers (Sun-Sat)
   function startOfWeek(d: Date) {
     const dt = new Date(d)
     const day = dt.getDay() // 0 Sun .. 6 Sat
-    const diff = (day === 0 ? -6 : 1) - day // shift so Monday is start
-    dt.setDate(dt.getDate() + diff)
+    dt.setDate(dt.getDate() - day) // go back to Sunday
     dt.setHours(0,0,0,0)
     return dt
   }
@@ -229,7 +226,6 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
         </div>
       </div>
 
-      {/* upfront compact upcoming list removed — details shown when a date is clicked */}
       <div className="calendar-header">
         <button className="btn" onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))}>{'<'}</button>
         <h2>{selectedDate.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</h2>
@@ -248,7 +244,6 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d} className="weekday">{d}</div>)}
           </div>
           <div className="month-grid">
-            {/** Render leading empty cells so the 1st lines up with the correct weekday */}
             {Array.from({ length: monthStartOffset }).map((_, i) => (
               <div key={`empty-${i}`} className="day-cell empty" />
             ))}
@@ -286,6 +281,257 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
         </>
       )}
 
+      {view === 'week' && (
+        <div className="week-view">
+          <div 
+            className="week-container"
+            onWheel={(e) => {
+              // Horizontal scrolling with mouse wheel
+              const container = e.currentTarget
+              container.scrollLeft += e.deltaY
+              e.preventDefault()
+            }}
+          >
+            {weekDates(selectedDate).map((d, index) => {
+              const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+              const isSelected = toKey(d) === toKey(selectedDate)
+              
+              return (
+                <div 
+                  key={toKey(d)} 
+                  className={`week-day-card ${isSelected ? 'selected' : ''}`}
+                  onClick={() => {
+                    setSelectedDate(d)
+                    onSelectDate?.(toKey(d))
+                    
+                    // Haptic feedback on mobile
+                    if ('vibrate' in navigator) {
+                      navigator.vibrate(50)
+                    }
+                  }}
+                  onDoubleClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    setDayViewPosition({
+                      x: rect.left,
+                      y: rect.top,
+                      width: rect.width,
+                      height: rect.height
+                    })
+                    setSelectedDate(d)
+                    setShowDayView(true)
+                    
+                    // Haptic feedback on mobile
+                    if ('vibrate' in navigator) {
+                      navigator.vibrate([50, 100, 50])
+                    }
+                  }}
+                >
+                  <div className="week-day-header">
+                    <div className="week-day-name">{dayNames[index]}</div>
+                    <div className="week-day-date">
+                      <span className="month">{d.toLocaleDateString('en-US', { month: 'short' })}</span>
+                      <span className="day-num">{d.getDate()}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Events for this day */}
+                  <div className="week-events">
+                    {eventsForDay(d).slice(0, 3).map((ev) => (
+                      <div key={ev.id} className={`week-event ${getEventColorClass(ev.title)}`}>
+                        <div className="event-time">{ev.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="event-title">{ev.title}</div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Todos for this day */}
+                  <div className="week-todos">
+                    {todosForDay(d).slice(0, 4).map((todo: any) => (
+                      <div key={todo.id} className="week-todo">
+                        <input 
+                          type="checkbox" 
+                          checked={todo.done}
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            const todos = getTodos().map((x: any) => x.id === todo.id ? {...x, done: !todo.done, status: (!todo.done ? 'done' : 'todo')} : x)
+                            localStorage.setItem('todos', JSON.stringify(todos))
+                            setTodosList(todos)
+                            window.dispatchEvent(new CustomEvent('todos-updated'))
+                            
+                            // Haptic feedback for todo completion
+                            if ('vibrate' in navigator) {
+                              navigator.vibrate(30)
+                            }
+                          }}
+                        />
+                        <span className={`todo-text ${todo.done ? 'done' : ''}`}>{todo.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Meal for this day */}
+                  <div className="week-meal">
+                    {(() => { 
+                      const m = JSON.parse(localStorage.getItem('meals')||'[]').find((mm:any)=>mm.date===toKey(d))
+                      return m ? (
+                        <div className="meal-badge">🍽️ {m.title}</div>
+                      ) : (
+                        <div className="no-meal">No meal planned</div>
+                      )
+                    })()}
+                  </div>
+                  
+                  {/* Frosted glass sticker preview */}
+                  <div className="week-stickers">
+                    <div className="sticker-preview-frosted">
+                      {/* Get actual stickers from localStorage or show placeholder */}
+                      {(() => {
+                        try {
+                          const stickers = JSON.parse(localStorage.getItem('stickers')||'[]')
+                          const dayStickers = stickers.filter((s:any) => s.date === toKey(d))
+                          return dayStickers.length > 0 ? (
+                            <div className="sticker-blur">
+                              {dayStickers.slice(0, 3).map((s:any, i:number) => (
+                                <span key={i}>{s.emoji || '✨'}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="sticker-blur">🎂✨🎉</div>
+                          )
+                        } catch {
+                          return <div className="sticker-blur">🎂✨🎉</div>
+                        }
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {view === 'day' && (
+        <div className="single-day-view">
+          <h3>Day: {selectedDate.toDateString()}</h3>
+          
+          <div className="day-detail">
+            <section className="day-events">
+              <h4>Appointments</h4>
+              {eventsForDay(selectedDate).length === 0 && <div>No appointments</div>}
+              {eventsForDay(selectedDate).map((ev) => (
+                <div key={ev.id} className="event-row">
+                  <strong>{ev.title}</strong>
+                  <div className="time">{ev.start.toLocaleTimeString()} - {ev.end.toLocaleTimeString()}</div>
+                  <div className="desc">{ev.description}</div>
+                </div>
+              ))}
+            </section>
+
+            <section className="day-todos">
+              <h4>To-dos</h4>
+              
+              <div className="add-todo-inline">
+                <input 
+                  type="text" 
+                  placeholder="Add todo for this day..." 
+                  value={newTodoText}
+                  onChange={(e) => setNewTodoText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      addTodoForDay()
+                    }
+                  }}
+                />
+                <select value={newTodoOwner} onChange={(e) => setNewTodoOwner(e.target.value)}>
+                  <option value="Emily">Em</option>
+                  <option value="Steph">Steph</option>
+                  <option value="Maisie">Maisie</option>
+                </select>
+                <button className="btn" onClick={addTodoForDay} disabled={!newTodoText.trim()}>
+                  Add
+                </button>
+              </div>
+
+              {todosForDay(selectedDate).length === 0 && <div>No todos</div>}
+              {todosForDay(selectedDate).map((t:any)=> (
+                <div key={t.id} className="todo-row">
+                  <input type="checkbox" checked={t.done} onChange={() => { const todos = getTodos().map((x:any)=> x.id===t.id?{...x,done:!x.done, status: (!x.done? 'done':'todo')} : x); localStorage.setItem('todos', JSON.stringify(todos)); window.dispatchEvent(new CustomEvent('todos-updated')) }} />
+                  <span className={`todo-title ${t.done? 'done':''}`}>{t.title}</span>
+                  <small>Due: {t.date|| '—'}</small>
+                </div>
+              ))}
+            </section>
+
+            <section className="day-meal-edit">
+              <h4>Meal</h4>
+              <div className="meal-controls">
+                <select value={mealChoice} onChange={(e)=>{
+                  const val = e.target.value
+                  setMealChoice(val)
+                  // apply to selected day only
+                  const meals = JSON.parse(localStorage.getItem('meals')||'[]')
+                  const key = selectedDate.toISOString().slice(0,10)
+                  const idx = meals.findIndex((m:any)=>m.date===key)
+                  if (idx>=0) { meals[idx].title = val; } else { meals.push({ id: Date.now().toString(), date: key, title: val, groceries: [] }) }
+                  localStorage.setItem('meals', JSON.stringify(meals))
+                  window.dispatchEvent(new CustomEvent('meals-updated'))
+                }}>
+                  {availableMealTitles.map((t: string) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <button className="btn btn-ghost" onClick={() => {
+                  if (!multiOpen) {
+                    // open panel and preselect current day
+                    const key = toKey(selectedDate)
+                    setMultiSelected({ [key]: true })
+                    setMultiOpen(true)
+                  } else {
+                    // confirm apply to selected days, then close
+                    const meals = JSON.parse(localStorage.getItem('meals')||'[]')
+                    const keys = Object.keys(multiSelected).filter(k => multiSelected[k])
+                    const now = Date.now().toString()
+                    keys.forEach((k, i) => {
+                      const idx = meals.findIndex((m:any)=>m.date===k)
+                      if (idx>=0) { meals[idx].title = mealChoice } else { meals.push({ id: now + i, date: k, title: mealChoice, groceries: [] }) }
+                    })
+                    localStorage.setItem('meals', JSON.stringify(meals))
+                    window.dispatchEvent(new CustomEvent('meals-updated'))
+                    setMultiOpen(false)
+                  }
+                }}>{multiOpen ? 'Confirm apply' : 'Apply to multiple days'}</button>
+              </div>
+              {multiOpen && (
+                <div className="multi-apply-panel">
+                  <div className="select-all">
+                    <label><input type="checkbox" checked={weekDates(selectedDate).every(d => multiSelected[toKey(d)])} onChange={(e)=>{
+                      const checked = e.currentTarget.checked
+                      const obj: Record<string,boolean> = {}
+                      weekDates(selectedDate).forEach(d => obj[toKey(d)] = checked)
+                      setMultiSelected(obj)
+                    }} /> Select all (this week)</label>
+                  </div>
+                  <div className="week-checkboxes">
+                    {weekDates(selectedDate).map((d, idx) => (
+                      <label key={toKey(d)} className="week-day">
+                        <input type="checkbox" checked={!!multiSelected[toKey(d)]} onChange={(e)=>{
+                          const key = toKey(d)
+                          setMultiSelected(s => ({ ...s, [key]: e.currentTarget.checked }))
+                        }} />
+                        <span className="wd-name">{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][idx]}</span>
+                        <span className="wd-date">{d.getMonth()+1}/{d.getDate()}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="meal-ingredients">
+                Ingredients: {(() => { const m = JSON.parse(localStorage.getItem('meals')||'[]').find((mm:any)=>mm.date===selectedDate.toISOString().slice(0,10)); return m && m.groceries ? m.groceries.join(', ') : 'None' })()}
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+
       {fetchError && (
         <div className="calendar-fetch-error">
           <strong>Calendar failed to load:</strong>
@@ -305,184 +551,6 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
           </div>
         </div>
       )}
-
-      <div className="day-view">
-        <h3>Day: {selectedDate.toDateString()}</h3>
-        <div className="day-detail">
-          <section className="day-events">
-            <h4>Appointments</h4>
-            {eventsForDay(selectedDate).length === 0 && <div>No appointments</div>}
-            {eventsForDay(selectedDate).map((ev) => (
-              <div key={ev.id} className="event-row">
-                <strong>{ev.title}</strong>
-                <div className="time">{ev.start.toLocaleTimeString()} - {ev.end.toLocaleTimeString()}</div>
-                <div className="desc">{ev.description}</div>
-              </div>
-            ))}
-          </section>
-
-          <section className="day-todos">
-            <h4>To-dos</h4>
-            
-            <div className="add-todo-inline">
-              <input 
-                type="text" 
-                placeholder="Add todo for this day..." 
-                value={newTodoText}
-                onChange={(e) => setNewTodoText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    addTodoForDay()
-                  }
-                }}
-              />
-              <select value={newTodoOwner} onChange={(e) => setNewTodoOwner(e.target.value)}>
-                <option value="Emily">Em</option>
-                <option value="Steph">Steph</option>
-                <option value="Maisie">Maisie</option>
-              </select>
-              <button className="btn" onClick={addTodoForDay} disabled={!newTodoText.trim()}>
-                Add
-              </button>
-            </div>
-
-            {todosForDay(selectedDate).length === 0 && <div>No todos</div>}
-            {todosForDay(selectedDate).map((t:any)=> (
-              <div key={t.id} className="todo-row">
-                <input type="checkbox" checked={t.done} onChange={() => { const todos = getTodos().map((x:any)=> x.id===t.id?{...x,done:!x.done, status: (!x.done? 'done':'todo')} : x); localStorage.setItem('todos', JSON.stringify(todos)); window.dispatchEvent(new CustomEvent('todos-updated')) }} />
-                <span className={`todo-title ${t.done? 'done':''}`}>{t.title}</span>
-                <small>Due: {t.date|| '—'}</small>
-              </div>
-            ))}
-          </section>
-
-          <section className="day-meal-edit">
-            <h4>Meal</h4>
-            <div className="meal-controls">
-              <select value={mealChoice} onChange={(e)=>{
-                const val = e.target.value
-                setMealChoice(val)
-                // apply to selected day only
-                const meals = JSON.parse(localStorage.getItem('meals')||'[]')
-                const key = selectedDate.toISOString().slice(0,10)
-                const idx = meals.findIndex((m:any)=>m.date===key)
-                if (idx>=0) { meals[idx].title = val; } else { meals.push({ id: Date.now().toString(), date: key, title: val, groceries: [] }) }
-                localStorage.setItem('meals', JSON.stringify(meals))
-                window.dispatchEvent(new CustomEvent('meals-updated'))
-              }}>
-                {availableMealTitles.map((t: string) => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <button className="btn btn-ghost" onClick={() => {
-                if (!multiOpen) {
-                  // open panel and preselect current day
-                  const key = toKey(selectedDate)
-                  setMultiSelected({ [key]: true })
-                  setMultiOpen(true)
-                } else {
-                  // confirm apply to selected days, then close
-                  const meals = JSON.parse(localStorage.getItem('meals')||'[]')
-                  const keys = Object.keys(multiSelected).filter(k => multiSelected[k])
-                  const now = Date.now().toString()
-                  keys.forEach((k, i) => {
-                    const idx = meals.findIndex((m:any)=>m.date===k)
-                    if (idx>=0) { meals[idx].title = mealChoice } else { meals.push({ id: now + i, date: k, title: mealChoice, groceries: [] }) }
-                  })
-                  localStorage.setItem('meals', JSON.stringify(meals))
-                  window.dispatchEvent(new CustomEvent('meals-updated'))
-                  setMultiOpen(false)
-                }
-              }}>{multiOpen ? 'Confirm apply' : 'Apply to multiple days'}</button>
-            </div>
-            {multiOpen && (
-              <div className="multi-apply-panel">
-                <div className="select-all">
-                  <label><input type="checkbox" checked={weekDates(selectedDate).every(d => multiSelected[toKey(d)])} onChange={(e)=>{
-                    const checked = e.currentTarget.checked
-                    const obj: Record<string,boolean> = {}
-                    weekDates(selectedDate).forEach(d => obj[toKey(d)] = checked)
-                    setMultiSelected(obj)
-                  }} /> Select all (this week)</label>
-                </div>
-                <div className="week-checkboxes">
-                  {weekDates(selectedDate).map((d, idx) => (
-                    <label key={toKey(d)} className="week-day">
-                      <input type="checkbox" checked={!!multiSelected[toKey(d)]} onChange={(e)=>{
-                        const key = toKey(d)
-                        setMultiSelected(s => ({ ...s, [key]: e.currentTarget.checked }))
-                      }} />
-                      <span className="wd-name">{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][idx]}</span>
-                      <span className="wd-date">{d.getMonth()+1}/{d.getDate()}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="meal-ingredients">
-              Ingredients: {(() => { const m = JSON.parse(localStorage.getItem('meals')||'[]').find((mm:any)=>mm.date===selectedDate.toISOString().slice(0,10)); return m && m.groceries ? m.groceries.join(', ') : 'None' })()}
-            </div>
-          </section>
-        </div>
-      </div>
-
-      {/* Person Columns Layout */}
-      <div className="person-columns">
-        <div className="person-column">
-          <h4>Em</h4>
-          <div className="person-todos">
-            <h5>To-dos</h5>
-            {todosList.filter((t: any) => t.owner === 'Emily' || t.owner === 'Em').map((t: any) => (
-              <div key={t.id} className="person-todo-item">
-                <input type="checkbox" checked={t.done} onChange={() => {
-                  const todos = getTodos().map((x: any) => x.id === t.id ? {...x, done: !x.done, status: (!x.done ? 'done' : 'todo')} : x)
-                  localStorage.setItem('todos', JSON.stringify(todos))
-                  setTodosList(todos)
-                  window.dispatchEvent(new CustomEvent('todos-updated'))
-                }} />
-                <span className={`todo-title ${t.done ? 'done' : ''}`}>{t.title}</span>
-                <small>{t.date}</small>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="person-column">
-          <h4>Steph</h4>
-          <div className="person-todos">
-            <h5>To-dos</h5>
-            {todosList.filter((t: any) => t.owner === 'Steph').map((t: any) => (
-              <div key={t.id} className="person-todo-item">
-                <input type="checkbox" checked={t.done} onChange={() => {
-                  const todos = getTodos().map((x: any) => x.id === t.id ? {...x, done: !x.done, status: (!x.done ? 'done' : 'todo')} : x)
-                  localStorage.setItem('todos', JSON.stringify(todos))
-                  setTodosList(todos)
-                  window.dispatchEvent(new CustomEvent('todos-updated'))
-                }} />
-                <span className={`todo-title ${t.done ? 'done' : ''}`}>{t.title}</span>
-                <small>{t.date}</small>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="person-column">
-          <h4>Maisie</h4>
-          <div className="person-todos">
-            <h5>To-dos</h5>
-            {todosList.filter((t: any) => t.owner === 'Maisie').map((t: any) => (
-              <div key={t.id} className="person-todo-item">
-                <input type="checkbox" checked={t.done} onChange={() => {
-                  const todos = getTodos().map((x: any) => x.id === t.id ? {...x, done: !x.done, status: (!x.done ? 'done' : 'todo')} : x)
-                  localStorage.setItem('todos', JSON.stringify(todos))
-                  setTodosList(todos)
-                  window.dispatchEvent(new CustomEvent('todos-updated'))
-                }} />
-                <span className={`todo-title ${t.done ? 'done' : ''}`}>{t.title}</span>
-                <small>{t.date}</small>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* Enhanced Day View Modal */}
       {showDayView && (

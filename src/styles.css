@@ -63,8 +63,8 @@ body{font-family: Inter, system-ui, -apple-system, 'Helvetica Neue', Arial; marg
 .sync-indicator.syncing{animation:spin 1s linear infinite}
 .sync-status small{color:var(--muted);font-size:11px}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.dashboard{display:flex;gap:12px;padding:12px;flex-wrap:wrap}
-.calendar-col{flex:1 1 480px;min-width:320px}
+.dashboard{display:flex;gap:0;padding:12px 0;flex-wrap:nowrap;height:100vh}
+.calendar-col{flex:1;min-width:320px;padding:12px;overflow-y:auto}
 .side-col{width:360px;min-width:280px}
 .calendar{padding:12px}
 .calendar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
@@ -908,4 +908,429 @@ button.btn + button.btn { margin-left: 8px }
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Week View - Horizontal Scrolling Layout */
+.week-view {
+  margin-top: 1rem;
+}
+
+.week-container {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 1rem;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--surface);
+}
+
+.week-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.week-container::-webkit-scrollbar-track {
+  background: var(--surface);
+  border-radius: 4px;
+}
+
+.week-container::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+.week-day-card {
+  flex: 0 0 280px;
+  min-height: 400px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  scroll-snap-align: start;
+  box-shadow: var(--card-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.week-day-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+  border-color: var(--accent);
+}
+
+.week-day-card.selected {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--glass-bg), var(--card-bg));
+  box-shadow: 0 8px 32px rgba(0,162,255,0.2);
+}
+
+.week-day-header {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.week-day-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.week-day-date {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.week-day-date .month {
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.week-day-date .day-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.week-events {
+  margin-bottom: 1rem;
+}
+
+.week-event {
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid var(--accent);
+  font-size: 0.875rem;
+}
+
+.week-event.event-birthday {
+  border-left-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.week-event.event-meeting {
+  border-left-color: #4ecdc4;
+  background: rgba(78, 205, 196, 0.1);
+}
+
+.week-event.event-appointment {
+  border-left-color: #45b7d1;
+  background: rgba(69, 183, 209, 0.1);
+}
+
+.week-event-time {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.75rem;
+}
+
+.week-event-title {
+  color: var(--text);
+  margin-top: 0.25rem;
+}
+
+.week-todos {
+  margin-bottom: 1rem;
+}
+
+.week-todo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  font-size: 0.875rem;
+}
+
+.week-todo input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.week-todo .todo-text {
+  color: var(--text);
+  flex: 1;
+}
+
+.week-todo .todo-text.done {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.week-meal {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, var(--accent), #764ba2);
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.week-meal .no-meal {
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+
+.week-stickers {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  pointer-events: none;
+}
+
+.sticker-preview-frosted {
+  height: 100%;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sticker-blur {
+  font-size: 1.5rem;
+  opacity: 0.6;
+  filter: blur(1px);
+  letter-spacing: 0.5rem;
+}
+
+/* Mobile responsiveness for week view */
+@media (max-width: 768px) {
+  .week-day-card {
+    flex: 0 0 240px;
+    min-height: 350px;
+    padding: 0.75rem;
+  }
+  
+  .week-container {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  /* Add haptic feedback hint */
+  .week-container::before {
+    content: "← Swipe to scroll through days →";
+    display: block;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    padding: 0 1rem;
+  }
+}
+
+/* Icon Sidebar */
+.icon-sidebar {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 60px;
+  min-height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  transition: width 0.3s ease;
+}
+
+.icon-sidebar:has(.sidebar-panel) {
+  width: 320px;
+}
+
+.sidebar-icons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0.5rem;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  width: 60px;
+  z-index: 10;
+}
+
+.sidebar-icon {
+  width: 48px;
+  height: 48px;
+  border: none;
+  background: var(--card-bg);
+  border-radius: 12px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--card-shadow);
+  position: relative;
+}
+
+.sidebar-icon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  background: var(--hover-bg);
+}
+
+.sidebar-icon.active {
+  background: var(--accent);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 8px 24px rgba(0,162,255,0.3);
+}
+
+.sidebar-panel {
+  position: absolute;
+  top: 0;
+  left: 60px;
+  width: 260px;
+  height: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: none;
+  box-shadow: var(--card-shadow);
+  z-index: 5;
+  overflow-y: auto;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.close-panel {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.close-panel:hover {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+.panel-content {
+  padding: 1rem;
+}
+
+/* Quick Add Forms */
+.meal-quick-add,
+.todo-quick-add,
+.grocery-quick-add {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.meal-select,
+.meal-input,
+.todo-input,
+.owner-select,
+.grocery-input,
+.category-select {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.meal-select:focus,
+.meal-input:focus,
+.todo-input:focus,
+.owner-select:focus,
+.grocery-input:focus,
+.category-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,162,255,0.1);
+}
+
+.recent-todos,
+.grocery-categories {
+  margin-top: 1rem;
+}
+
+.recent-todos h4,
+.grocery-categories h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.todo-item input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.quick-grocery-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.quick-grocery {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-grocery:hover {
+  background: var(--hover-bg);
+  border-color: var(--accent);
+}
+
+/* Mobile: Hide icon sidebar, use FAB instead */
+@media (max-width: 768px) {
+  .icon-sidebar {
+    display: none;
+  }
 }
