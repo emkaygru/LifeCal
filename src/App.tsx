@@ -83,7 +83,7 @@ export default function App() {
                   localStorage.setItem('currentPage', 'calendar')
                 }}
               >
-                📅 Calendar
+                Cal
               </button>
               <button 
                 className={`nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`}
@@ -92,76 +92,50 @@ export default function App() {
                   localStorage.setItem('currentPage', 'dashboard')
                 }}
               >
-                📊 Dashboard
+                Dashboard
               </button>
               <button 
-                className={`nav-btn ${(currentPage as string) === 'idle' ? 'active' : ''}`}
+                className={`nav-btn ${currentPage === 'idle' ? 'active' : ''}`}
                 onClick={() => {
                   setCurrentPage('idle')
                   localStorage.setItem('currentPage', 'idle')
                 }}
               >
-                🖼️ Slideshow
+                Idle
               </button>
             </div>
             
             <h1>LifeCal</h1>
             
-            <div className="parking-widget">
-              <span>Parked in:</span>
+            <div className="header-controls">
               <button 
-                className={`parking-btn ${parking === 'P2' ? 'active' : ''}`}
+                className="theme-toggle"
                 onClick={() => {
-                  const newParking = parking === 'P2' ? null : 'P2'
-                  setParking(newParking)
-                  localStorage.setItem('parking', newParking || '')
+                  const newTheme = theme === 'dark' ? 'light' : 'dark'
+                  setTheme(newTheme)
+                  localStorage.setItem('theme', newTheme)
+                  document.documentElement.setAttribute('data-theme', newTheme)
                 }}
+                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               >
-                P2
+                {theme === 'dark' ? '☀️' : '🌙'}
               </button>
-              <button 
-                className={`parking-btn ${parking === 'P3' ? 'active' : ''}`}
-                onClick={() => {
-                  const newParking = parking === 'P3' ? null : 'P3'
-                  setParking(newParking)
-                  localStorage.setItem('parking', newParking || '')
-                }}
-              >
-                P3
-              </button>
-            </div>
-            <div className="layout-controls">
-              <label>
-                Layout:
-                <select className="btn" value={layout} onChange={(e) => setLayout(e.target.value)}>
-                  <option value="default">Default</option>
-                  <option value="compact">Compact</option>
-                </select>
-              </label>
-              <label>
-                Theme:
-                <select className="btn" value={theme} onChange={(e)=>{ const v = e.target.value as any; setTheme(v); localStorage.setItem('theme', v); document.documentElement.setAttribute('data-theme', v) }}>
-                  <option value="dark">Dark</option>
-                  <option value="light">Light</option>
-                </select>
-              </label>
-              <label>
-                User:
+              
+              <label className="user-select">
                 <select className="btn" value={user} onChange={(e)=>{ setUser(e.target.value); localStorage.setItem('user', e.target.value) }}>
                   <option>Emily</option>
                   <option>Steph</option>
                 </select>
               </label>
+              
+              <div className="sync-status">
+                <span className={`sync-indicator ${syncStatus}`}>
+                  {syncStatus === 'online' ? '🟢' : syncStatus === 'syncing' ? '🔄' : '🔴'}
+                </span>
+                <small>{syncStatus === 'online' ? 'Synced' : syncStatus === 'syncing' ? 'Syncing...' : 'Offline'}</small>
+              </div>
             </div>
-            <div className="sync-status">
-              <span className={`sync-indicator ${syncStatus}`}>
-                {syncStatus === 'online' ? '🟢' : syncStatus === 'syncing' ? '🔄' : '🔴'}
-              </span>
-              <small>{syncStatus === 'online' ? 'Synced' : syncStatus === 'syncing' ? 'Syncing...' : 'Offline'}</small>
-            </div>
-          </header>
-
-          <main className="dashboard">
+          </header>          <main className="dashboard">
             {currentPage === 'dashboard' ? (
               <Dashboard />
             ) : (
@@ -171,7 +145,7 @@ export default function App() {
                 </section>
 
                 {/* Icon-based Sidebar for Desktop/Tablet */}
-                <IconSidebar selectedDate={selectedDate} />
+                <IconSidebar selectedDate={selectedDate} parking={parking} setParking={setParking} />
               </>
             )}
           </main>

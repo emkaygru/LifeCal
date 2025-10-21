@@ -2,9 +2,11 @@ import { useState } from 'react'
 
 interface IconSidebarProps {
   selectedDate: string | null
+  parking: string | null
+  setParking: (parking: string | null) => void
 }
 
-export default function IconSidebar({ selectedDate }: IconSidebarProps) {
+export default function IconSidebar({ selectedDate, parking, setParking }: IconSidebarProps) {
   const [activePanel, setActivePanel] = useState<string | null>(null)
 
   const togglePanel = (panel: string) => {
@@ -45,6 +47,14 @@ export default function IconSidebar({ selectedDate }: IconSidebarProps) {
           title="Quick Notes"
         >
           📝
+        </button>
+
+        <button 
+          className={`sidebar-icon ${activePanel === 'parking' ? 'active' : ''}`}
+          onClick={() => togglePanel('parking')}
+          title="Parking"
+        >
+          🚗
         </button>
       </div>
 
@@ -175,6 +185,52 @@ export default function IconSidebar({ selectedDate }: IconSidebarProps) {
                   <button className="delete-btn" title="Delete">×</button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activePanel === 'parking' && (
+        <div className="sidebar-panel">
+          <div className="panel-header">
+            <h3>Parking Location</h3>
+            <button className="close-panel" onClick={() => setActivePanel(null)}>×</button>
+          </div>
+          <div className="panel-content">
+            <div className="parking-selector">
+              <p>Where are you parked?</p>
+              <div className="parking-options">
+                <button 
+                  className={`parking-btn ${parking === 'P2' ? 'active' : ''}`}
+                  onClick={() => {
+                    const newParking = parking === 'P2' ? null : 'P2'
+                    setParking(newParking)
+                    localStorage.setItem('parking', newParking || '')
+                  }}
+                >
+                  P2
+                </button>
+                <button 
+                  className={`parking-btn ${parking === 'P3' ? 'active' : ''}`}
+                  onClick={() => {
+                    const newParking = parking === 'P3' ? null : 'P3'
+                    setParking(newParking)
+                    localStorage.setItem('parking', newParking || '')
+                  }}
+                >
+                  P3
+                </button>
+              </div>
+              {parking && (
+                <div className="current-parking">
+                  Currently parked in: <strong>{parking}</strong>
+                </div>
+              )}
+              {!parking && (
+                <div className="no-parking">
+                  No parking location set
+                </div>
+              )}
             </div>
           </div>
         </div>
