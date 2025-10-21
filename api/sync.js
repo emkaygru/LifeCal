@@ -1,6 +1,20 @@
 import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+// Initialize Redis client - try KV first, fallback to Redis URL
+let redis;
+try {
+  redis = kv;
+} catch (e) {
+  // Fallback to Redis URL if KV not available
+  if (process.env.REDIS_URL) {
+    redis = Redis.fromEnv();
+  }
+}
 
 const ALLOWED_ORIGINS = [
+  'https://life-nqv4ymdmo-emilys-projects-9f8716f7.vercel.app',
+  'https://life-ahkdmc4rg-emilys-projects-9f8716f7.vercel.app',
   'https://life-jwdmzfiqj-emilys-projects-9f8716f7.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174'
@@ -27,7 +41,7 @@ export default async function handler(request) {
 
     if (request.method === 'GET') {
       // Get data from KV
-      const data = await kv.get(`lifecal:${dataType}`) || [];
+      const data = await redis.get(`lifecal:${dataType}`) || [];
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -38,10 +52,10 @@ export default async function handler(request) {
       
       if (action === 'sync') {
         // Full sync - replace all data
-        await kv.set(`lifecal:${dataType}`, body.data);
+        await redis.set(`lifecal:${dataType}`, body.data);
         
         // Also store timestamp for conflict resolution
-        await kv.set(`lifecal:${dataType}:updated`, Date.now());
+        await redis.set(`lifecal:${dataType}:updated`, Date.now());
         
         return new Response(JSON.stringify({ success: true, timestamp: Date.now() }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -50,10 +64,10 @@ export default async function handler(request) {
 
       if (action === 'add') {
         // Add single item
-        const existing = await kv.get(`lifecal:${dataType}`) || [];
+        const existing = await redis.get(`lifecal:${dataType}`) || [];
         const updated = [...existing, body.item];
-        await kv.set(`lifecal:${dataType}`, updated);
-        await kv.set(`lifecal:${dataType}:updated`, Date.now());
+        await redis.set(`lifecal:${dataType}`, updated);
+        await redis.set(`lifecal:${dataType}:updated`, Date.now());
         
         return new Response(JSON.stringify({ success: true, data: updated }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -62,12 +76,12 @@ export default async function handler(request) {
 
       if (action === 'update') {
         // Update single item
-        const existing = await kv.get(`lifecal:${dataType}`) || [];
+        const existing = await redis.get(`lifecal:${dataType}`) || [];
         const updated = existing.map(item => 
           item.id === body.item.id ? { ...item, ...body.item } : item
         );
-        await kv.set(`lifecal:${dataType}`, updated);
-        await kv.set(`lifecal:${dataType}:updated`, Date.now());
+        await redis.set(`lifecal:${dataType}`, updated);
+        await redis.set(`lifecal:${dataType}:updated`, Date.now());
         
         return new Response(JSON.stringify({ success: true, data: updated }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -76,10 +90,10 @@ export default async function handler(request) {
 
       if (action === 'delete') {
         // Delete single item
-        const existing = await kv.get(`lifecal:${dataType}`) || [];
+        const existing = await redis.get(`lifecal:${dataType}`) || [];
         const updated = existing.filter(item => item.id !== body.id);
-        await kv.set(`lifecal:${dataType}`, updated);
-        await kv.set(`lifecal:${dataType}:updated`, Date.now());
+        await redis.set(`lifecal:${dataType}`, updated);
+        await redis.set(`lifecal:${dataType}:updated`, Date.now());
         
         return new Response(JSON.stringify({ success: true, data: updated }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
