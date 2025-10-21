@@ -28,6 +28,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   const [multiOpen, setMultiOpen] = useState<boolean>(false)
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({}) // key by YYYY-MM-DD
   const [newTodoText, setNewTodoText] = useState<string>('')
+  const [newTodoOwner, setNewTodoOwner] = useState<string>('Emily')
 
   // Helper: base64 encode that works in browser & node
   const base64Encode = (s: string) => {
@@ -155,7 +156,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
       date: toKey(selectedDate),
       status: 'todo',
       done: false,
-      owner: 'user' // default owner
+      owner: newTodoOwner
     }
     
     const currentTodos = getTodos()
@@ -166,6 +167,15 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
     
     // Dispatch event so other components know todos updated
     window.dispatchEvent(new CustomEvent('todos-updated'))
+  }
+
+  function getEventColorClass(title: string) {
+    const lower = title.toLowerCase()
+    if (lower.includes('cleaning') || lower.includes('clean')) return 'event-cleaning'
+    if (lower.includes('birthday') || lower.includes('party') || lower.includes('celebration')) return 'event-birthday'
+    if (lower.includes('meeting') || lower.includes('call')) return 'event-meeting'
+    if (lower.includes('appointment') || lower.includes('doctor')) return 'event-appointment'
+    return 'event-default'
   }
 
   // week helpers (Mon-Sun)
@@ -245,7 +255,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
                 <div className="date-num">{d.getDate()}</div>
                 <div className="event-preview">
                   {eventsForDay(d).slice(0, 2).map((ev) => (
-                    <div key={ev.id} className="event-pill">{ev.title}</div>
+                    <div key={ev.id} className={`event-pill ${getEventColorClass(ev.title)}`}>{ev.title}</div>
                   ))}
                   {todosForDay(d).slice(0,2).map((td:any)=> (
                     <div key={td.id} className="todo-pill">{td.title}</div>
@@ -313,6 +323,11 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
                   }
                 }}
               />
+              <select value={newTodoOwner} onChange={(e) => setNewTodoOwner(e.target.value)}>
+                <option value="Emily">Em</option>
+                <option value="Steph">Steph</option>
+                <option value="Maisie">Maisie</option>
+              </select>
               <button className="btn" onClick={addTodoForDay} disabled={!newTodoText.trim()}>
                 Add
               </button>
@@ -393,6 +408,66 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
               Ingredients: {(() => { const m = JSON.parse(localStorage.getItem('meals')||'[]').find((mm:any)=>mm.date===selectedDate.toISOString().slice(0,10)); return m && m.groceries ? m.groceries.join(', ') : 'None' })()}
             </div>
           </section>
+        </div>
+      </div>
+
+      {/* Person Columns Layout */}
+      <div className="person-columns">
+        <div className="person-column">
+          <h4>Em</h4>
+          <div className="person-todos">
+            <h5>To-dos</h5>
+            {todosList.filter((t: any) => t.owner === 'Emily' || t.owner === 'Em').map((t: any) => (
+              <div key={t.id} className="person-todo-item">
+                <input type="checkbox" checked={t.done} onChange={() => {
+                  const todos = getTodos().map((x: any) => x.id === t.id ? {...x, done: !x.done, status: (!x.done ? 'done' : 'todo')} : x)
+                  localStorage.setItem('todos', JSON.stringify(todos))
+                  setTodosList(todos)
+                  window.dispatchEvent(new CustomEvent('todos-updated'))
+                }} />
+                <span className={`todo-title ${t.done ? 'done' : ''}`}>{t.title}</span>
+                <small>{t.date}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="person-column">
+          <h4>Steph</h4>
+          <div className="person-todos">
+            <h5>To-dos</h5>
+            {todosList.filter((t: any) => t.owner === 'Steph').map((t: any) => (
+              <div key={t.id} className="person-todo-item">
+                <input type="checkbox" checked={t.done} onChange={() => {
+                  const todos = getTodos().map((x: any) => x.id === t.id ? {...x, done: !x.done, status: (!x.done ? 'done' : 'todo')} : x)
+                  localStorage.setItem('todos', JSON.stringify(todos))
+                  setTodosList(todos)
+                  window.dispatchEvent(new CustomEvent('todos-updated'))
+                }} />
+                <span className={`todo-title ${t.done ? 'done' : ''}`}>{t.title}</span>
+                <small>{t.date}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="person-column">
+          <h4>Maisie</h4>
+          <div className="person-todos">
+            <h5>To-dos</h5>
+            {todosList.filter((t: any) => t.owner === 'Maisie').map((t: any) => (
+              <div key={t.id} className="person-todo-item">
+                <input type="checkbox" checked={t.done} onChange={() => {
+                  const todos = getTodos().map((x: any) => x.id === t.id ? {...x, done: !x.done, status: (!x.done ? 'done' : 'todo')} : x)
+                  localStorage.setItem('todos', JSON.stringify(todos))
+                  setTodosList(todos)
+                  window.dispatchEvent(new CustomEvent('todos-updated'))
+                }} />
+                <span className={`todo-title ${t.done ? 'done' : ''}`}>{t.title}</span>
+                <small>{t.date}</small>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

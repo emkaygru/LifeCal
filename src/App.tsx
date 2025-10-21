@@ -12,6 +12,8 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null) // format YYYY-MM-DD
   const [theme, setTheme] = useState<'dark'|'light'>(() => (localStorage.getItem('theme') as any) || 'dark')
   const [user, setUser] = useState<string>(() => localStorage.getItem('user') || 'Emily')
+  const [parking, setParking] = useState<string | null>(() => localStorage.getItem('parking') || null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   function handleSelectDate(dateKey: string) {
     setSelectedDate(dateKey)
@@ -21,6 +23,29 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <h1>LifeCal</h1>
+        <div className="parking-widget">
+          <span>Parked in:</span>
+          <button 
+            className={`parking-btn ${parking === 'P2' ? 'active' : ''}`}
+            onClick={() => {
+              const newParking = parking === 'P2' ? null : 'P2'
+              setParking(newParking)
+              localStorage.setItem('parking', newParking || '')
+            }}
+          >
+            P2
+          </button>
+          <button 
+            className={`parking-btn ${parking === 'P3' ? 'active' : ''}`}
+            onClick={() => {
+              const newParking = parking === 'P3' ? null : 'P3'
+              setParking(newParking)
+              localStorage.setItem('parking', newParking || '')
+            }}
+          >
+            P3
+          </button>
+        </div>
         <div className="layout-controls">
           <label>
             Layout:
@@ -60,6 +85,29 @@ export default function App() {
           <DrawingPad />
         </aside>
       </main>
+
+      {/* Mobile Floating Action Button */}
+      <div className="mobile-fab">
+        <button 
+          className={`fab-main ${mobileMenuOpen ? 'open' : ''}`}
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          +
+        </button>
+        {mobileMenuOpen && (
+          <div className="fab-menu">
+            <button className="fab-item" onClick={() => { alert('Add Todo'); setMobileMenuOpen(false) }}>
+              📝 Todo
+            </button>
+            <button className="fab-item" onClick={() => { alert('Add Meal'); setMobileMenuOpen(false) }}>
+              🍽️ Meal
+            </button>
+            <button className="fab-item" onClick={() => { alert('Add Grocery'); setMobileMenuOpen(false) }}>
+              🛒 Grocery
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
