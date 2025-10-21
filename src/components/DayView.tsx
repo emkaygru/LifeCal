@@ -33,6 +33,7 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
   const [selectedMeal, setSelectedMeal] = useState('')
   const [todos, setTodos] = useState<any[]>([])
   const [isEditMode, setIsEditMode] = useState(false)
+  const [editingStickerId, setEditingStickerId] = useState<string | null>(null)
   const [holdTimer, setHoldTimer] = useState<NodeJS.Timeout | null>(null)
   const [isAnimating, setIsAnimating] = useState(true)
 
@@ -125,13 +126,13 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
 
   function removeSticker(stickerId: string) {
     saveStickers(stickers.filter(s => s.id !== stickerId))
-    setIsEditMode(false)
+    setEditingStickerId(null)
   }
 
   function handleStickerMouseDown(stickerId: string, e: React.MouseEvent) {
-    // Start hold timer for delete mode
+    // Start hold timer for delete mode on this specific sticker
     const timer = setTimeout(() => {
-      setIsEditMode(true)
+      setEditingStickerId(stickerId)
     }, 800) // 800ms hold
     
     setHoldTimer(timer)
@@ -142,6 +143,13 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
     if (holdTimer) {
       clearTimeout(holdTimer)
       setHoldTimer(null)
+    }
+  }
+
+  function handleStickerClick(stickerId: string, e: React.MouseEvent) {
+    // If we're clicking and not holding, just clear edit mode
+    if (editingStickerId && editingStickerId !== stickerId) {
+      setEditingStickerId(null)
     }
   }
 
@@ -263,67 +271,115 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
 
         {/* Todos Section */}
         <div className="day-todos">
-          <h4>To-dos</h4>
-          {dayTodos.length === 0 ? (
-            <div className="empty-state">No todos</div>
-          ) : (
-            dayTodos.map((todo) => (
-              <div key={todo.id} className="todo-item">
-                <input 
-                  type="checkbox" 
-                  checked={todo.done}
-                  onChange={() => toggleTodo(todo.id)}
-                />
-                <span className={`todo-text ${todo.done ? 'done' : ''}`}>
-                  {todo.title}
-                </span>
-              </div>
-            ))
+          <div className="todos-header">
+            <h4>To-dos</h4>
+            {todos.length === 0 ? (
+              <button 
+                className="add-todo-prompt"
+                onClick={() => {
+                  // Quick add todo functionality
+                  const todoText = prompt('Add a todo:')
+                  if (todoText?.trim()) {
+                    const newTodo = {
+                      id: Date.now().toString(),
+                      title: todoText.trim(),
+                      date: dateKey,
+                      done: false,
+                      owner: 'Emily' // Default owner, could be made dynamic
+                    }
+                    const allTodos = JSON.parse(localStorage.getItem('todos') || '[]')
+                    const updatedTodos = [...allTodos, newTodo]
+                    localStorage.setItem('todos', JSON.stringify(updatedTodos))
+                    setTodos(updatedTodos.filter((t: any) => t.date === dateKey))
+                    window.dispatchEvent(new CustomEvent('todos-updated'))
+                  }
+                }}
+              >
+                Click to add a todo
+              </button>
+            ) : (
+              <button 
+                className="add-todo-btn"
+                onClick={() => {
+                  const todoText = prompt('Add a todo:')
+                  if (todoText?.trim()) {
+                    const newTodo = {
+                      id: Date.now().toString(),
+                      title: todoText.trim(),
+                      date: dateKey,
+                      done: false,
+                      owner: 'Emily'
+                    }
+                    const allTodos = JSON.parse(localStorage.getItem('todos') || '[]')
+                    const updatedTodos = [...allTodos, newTodo]
+                    localStorage.setItem('todos', JSON.stringify(updatedTodos))
+                    setTodos(updatedTodos.filter((t: any) => t.date === dateKey))
+                    window.dispatchEvent(new CustomEvent('todos-updated'))
+                  }
+                }}
+              >
+                Add Todo
+              </button>
+            )}
+          </div>
+          
+          {todos.length > 0 && (
+            <div className="todos-list">
+              {todos.map((todo) => (
+                <div key={todo.id} className="todo-item">
+                  <input 
+                    type="checkbox" 
+                    checked={todo.done}
+                    onChange={() => toggleTodo(todo.id)}
+                  />
+                  <span className={`todo-text ${todo.done ? 'done' : ''}`}>
+                    {todo.title}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Unified Scrapbook Canvas - Drawing + Stickers + Notes */}
+        {/* Unified Canvas - Drawing + Stickers */}
         <div className="scrapbook-canvas">
-          <div className="canvas-header">
-            <h4>Notes:</h4>
-            <div className="canvas-tools">
+          <div className="canvas-tools">
+            <button 
+              className="tool-btn"
+              onClick={() => setShowGiphyPicker(!showGiphyPicker)}
+              title="Add GIF/Sticker"
+            >
+              ✨
+            </button>
+            
+            {['🎂', '🎉', '✨', '💖', '📝', '❤️'].map((emoji) => (
+              <button
+                key={emoji}
+                className="emoji-btn"
+                onClick={() => {
+                  const newSticker: DaySticker = {
+                    id: `emoji-${Date.now()}-${emoji}`,
+                    url: '',
+                    title: emoji,
+                    x: Math.random() * 200 + 20,
+                    y: Math.random() * 120 + 20
+                  }
+                  saveStickers([...stickers, newSticker])
+                }}
+              >
+                {emoji}
+              </button>
+            ))}
+            
+            {editingStickerId && (
               <button 
                 className="tool-btn"
-                onClick={() => setShowGiphyPicker(!showGiphyPicker)}
-                title="Add GIF/Sticker"
+                onClick={() => setEditingStickerId(null)}
+                title="Stop editing"
               >
-                ✨
+                ✓ Done
               </button>
-              
-              {['🎂', '🎉', '✨', '💖', '📝', '❤️'].map((emoji) => (
-                <button
-                  key={emoji}
-                  className="emoji-btn"
-                  onClick={() => {
-                    const newSticker: DaySticker = {
-                      id: `emoji-${Date.now()}-${emoji}`,
-                      url: '',
-                      title: emoji,
-                      x: Math.random() * 200 + 20,
-                      y: Math.random() * 120 + 20
-                    }
-                    saveStickers([...stickers, newSticker])
-                  }}
-                >
-                  {emoji}
-                </button>
-              ))}
-              
-              {stickers.length > 0 && (
-                <button 
-                  className={`tool-btn ${isEditMode ? 'active' : ''}`}
-                  onClick={() => setIsEditMode(!isEditMode)}
-                  title="Edit mode"
-                >
-                  {isEditMode ? '✓' : '✏️'}
-                </button>
-              )}
-            </div>
+            )}
           </div>
           
           <div className="canvas-area">
@@ -336,7 +392,7 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
             {stickers.map((sticker) => (
               <div
                 key={sticker.id}
-                className={`canvas-sticker ${isEditMode ? 'shake' : ''}`}
+                className={`canvas-sticker ${editingStickerId === sticker.id ? 'shake' : ''}`}
                 style={{ 
                   left: sticker.x + 'px', 
                   top: sticker.y + 'px',
@@ -344,14 +400,20 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
                   zIndex: 10
                 }}
                 draggable
-                onMouseDown={(e) => handleStickerMouseDown(sticker.id, e)}
+                onMouseDown={(e) => {
+                  handleStickerMouseDown(sticker.id, e)
+                }}
                 onMouseUp={handleStickerMouseUp}
                 onMouseLeave={handleStickerMouseUp}
+                onClick={(e) => {
+                  handleStickerClick(sticker.id, e)
+                }}
                 onDragEnd={(e) => {
                   const rect = e.currentTarget.parentElement!.getBoundingClientRect()
                   const x = Math.max(0, Math.min(e.clientX - rect.left - 25, rect.width - 50))
                   const y = Math.max(0, Math.min(e.clientY - rect.top - 25, rect.height - 50))
                   moveSticker(sticker.id, x, y)
+                  setEditingStickerId(null) // Clear edit mode after drag
                 }}
                 title={sticker.title}
               >
@@ -361,7 +423,7 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
                   <span className="emoji-sticker" style={{fontSize: '1.5rem'}}>{sticker.title}</span>
                 )}
                 
-                {isEditMode && (
+                {editingStickerId === sticker.id && (
                   <button 
                     className="delete-sticker-btn"
                     onClick={() => removeSticker(sticker.id)}
