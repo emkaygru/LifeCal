@@ -31,6 +31,7 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
   const [notes, setNotes] = useState('')
   const [drawing, setDrawing] = useState('')
   const [selectedMeal, setSelectedMeal] = useState('')
+  const [todos, setTodos] = useState<any[]>([])
   const [isEditMode, setIsEditMode] = useState(false)
   const [holdTimer, setHoldTimer] = useState<NodeJS.Timeout | null>(null)
   const [isAnimating, setIsAnimating] = useState(true)
@@ -42,7 +43,14 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
     const savedStickers = localStorage.getItem(`stickers-${dateKey}`)
     const savedNotes = localStorage.getItem(`notes-${dateKey}`)
     const savedDrawing = localStorage.getItem(`drawing-${dateKey}`)
-    const savedMeal = localStorage.getItem(`meal-${dateKey}`)
+    
+    // Load meal from meals array
+    const meals = JSON.parse(localStorage.getItem('meals') || '[]')
+    const dayMeal = meals.find((m: any) => m.date === dateKey)
+    
+    // Load todos from todos array
+    const allTodos = JSON.parse(localStorage.getItem('todos') || '[]')
+    const dayTodos = allTodos.filter((t: any) => t.date === dateKey)
 
     if (savedStickers) {
       setStickers(JSON.parse(savedStickers))
@@ -53,12 +61,36 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
     if (savedDrawing) {
       setDrawing(savedDrawing)
     }
-    if (savedMeal) {
-      setSelectedMeal(savedMeal)
+    if (dayMeal) {
+      setSelectedMeal(dayMeal.title || '')
     }
+    setTodos(dayTodos)
 
     // Trigger animation
     setTimeout(() => setIsAnimating(false), 100)
+  }, [dateKey])
+
+  // Listen for todos and meals updates
+  useEffect(() => {
+    const handleTodosUpdate = () => {
+      const allTodos = JSON.parse(localStorage.getItem('todos') || '[]')
+      const dayTodos = allTodos.filter((t: any) => t.date === dateKey)
+      setTodos(dayTodos)
+    }
+
+    const handleMealsUpdate = () => {
+      const meals = JSON.parse(localStorage.getItem('meals') || '[]')
+      const dayMeal = meals.find((m: any) => m.date === dateKey)
+      setSelectedMeal(dayMeal ? dayMeal.title || '' : '')
+    }
+
+    window.addEventListener('todos-updated', handleTodosUpdate)
+    window.addEventListener('meals-updated', handleMealsUpdate)
+
+    return () => {
+      window.removeEventListener('todos-updated', handleTodosUpdate)
+      window.removeEventListener('meals-updated', handleMealsUpdate)
+    }
   }, [dateKey])
 
   function saveStickers(newStickers: DaySticker[]) {
@@ -115,12 +147,43 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
 
   function saveMeal(meal: string) {
     setSelectedMeal(meal)
-    localStorage.setItem(`meal-${dateKey}`, meal)
+    
+    // Update meals array in localStorage
+    const meals = JSON.parse(localStorage.getItem('meals') || '[]')
+    const existingMealIndex = meals.findIndex((m: any) => m.date === dateKey)
+    
+    if (existingMealIndex >= 0) {
+      meals[existingMealIndex].title = meal
+    } else {
+      meals.push({
+        id: Date.now().toString(),
+        date: dateKey,
+        title: meal,
+        groceries: []
+      })
+    }
+    
+    localStorage.setItem('meals', JSON.stringify(meals))
     
     // Trigger sync
-    window.dispatchEvent(new CustomEvent('localStorageChange', {
-      detail: { key: `meal-${dateKey}`, value: meal }
-    }))
+    window.dispatchEvent(new CustomEvent('meals-updated'))
+  }
+
+  function toggleTodo(todoId: string) {
+    const allTodos = JSON.parse(localStorage.getItem('todos') || '[]')
+    const todoIndex = allTodos.findIndex((t: any) => t.id === todoId)
+    
+    if (todoIndex >= 0) {
+      allTodos[todoIndex].done = !allTodos[todoIndex].done
+      localStorage.setItem('todos', JSON.stringify(allTodos))
+      
+      // Update local state
+      const dayTodos = allTodos.filter((t: any) => t.date === dateKey)
+      setTodos(dayTodos)
+      
+      // Trigger sync
+      window.dispatchEvent(new CustomEvent('todos-updated'))
+    }
   }
 
   function saveNotes(newNotes: string) {
@@ -149,11 +212,7 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
   const monthName = date.toLocaleDateString('en-US', { month: 'short' })
 
   // Get todos and events for this day
-  const dayTodos = [
-    { id: '1', title: 'Morning workout', done: false },
-    { id: '2', title: 'Birthday prep', done: false },
-    { id: '3', title: 'Grocery shopping', done: true }
-  ]
+  const dayTodos = todos
 
   // Use real events passed from CalendarView
   const dayEvents = events.map(event => ({
@@ -213,7 +272,7 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
                 <input 
                   type="checkbox" 
                   checked={todo.done}
-                  onChange={() => {/* Handle todo toggle */}}
+                  onChange={() => toggleTodo(todo.id)}
                 />
                 <span className={`todo-text ${todo.done ? 'done' : ''}`}>
                   {todo.title}
