@@ -206,3 +206,220 @@ button.btn + button.btn { margin-left: 8px }
 .fab-item{padding:12px 16px;background:var(--card-bg);border:1px solid var(--glass-border);border-radius:25px;color:var(--text);cursor:pointer;white-space:nowrap;box-shadow:0 4px 15px rgba(0,0,0,0.1);transition:all 200ms ease;font-size:14px}
 .fab-item:hover{transform:translateX(-5px);box-shadow:0 6px 20px rgba(0,0,0,0.15)}
 @media(min-width:900px){.mobile-fab{display:none}}
+
+/* Giphy Picker Styles */
+.giphy-picker {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.giphy-search {
+  margin-bottom: 1rem;
+}
+
+.giphy-search-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.giphy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.5rem;
+}
+
+.giphy-sticker {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.25rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.giphy-sticker:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.giphy-sticker img {
+  width: 100%;
+  height: auto;
+  border-radius: 2px;
+}
+
+.giphy-loading, .giphy-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Enhanced Day View Styles */
+.day-view-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.day-view {
+  background: var(--card-bg);
+  border-radius: 12px;
+  width: 90vw;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--card-shadow);
+}
+
+.day-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
+
+.day-view-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.close-button {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.day-view-content {
+  padding: 1.5rem;
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 768px) {
+  .day-view-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+.day-canvas, .day-drawing, .day-notes {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid var(--border);
+}
+
+.day-canvas h3, .day-drawing h3, .day-notes h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.sticker-container {
+  position: relative;
+  min-height: 200px;
+  background: repeating-conic-gradient(var(--hover-bg) 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.placed-sticker {
+  position: absolute;
+  cursor: move;
+  user-select: none;
+  transition: transform 0.2s;
+}
+
+.placed-sticker:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+.placed-sticker img {
+  max-width: 60px;
+  max-height: 60px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.add-sticker-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.add-sticker-btn:hover {
+  filter: brightness(1.1);
+}
+
+.giphy-picker-container {
+  position: absolute;
+  top: 50px;
+  right: 10px;
+  z-index: 20;
+  max-width: 300px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.day-notes-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
+  background: var(--card-bg);
+  color: var(--text);
+}
+
+.day-notes-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0, 162, 255, 0.1);
+}

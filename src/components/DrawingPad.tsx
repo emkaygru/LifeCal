@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-export default function DrawingPad() {
+interface DrawingPadProps {
+  onSave?: (dataUrl: string) => void
+  initialDrawing?: string
+  storageKey?: string
+}
+
+export default function DrawingPad({ onSave, initialDrawing, storageKey = 'sticky-note' }: DrawingPadProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [color, setColor] = useState('#000')
   const [isDrawing, setIsDrawing] = useState(false)
@@ -13,13 +19,15 @@ export default function DrawingPad() {
     const ctx = c.getContext('2d')!
     ctx.fillStyle = '#fff8c4'
     ctx.fillRect(0, 0, c.width, c.height)
-    const saved = localStorage.getItem('sticky-note')
+    
+    // Use initialDrawing prop or fallback to localStorage
+    const saved = initialDrawing || localStorage.getItem(storageKey)
     if (saved) {
       const img = new Image()
       img.onload = () => ctx.drawImage(img, 0, 0)
       img.src = saved
     }
-  }, [])
+  }, [initialDrawing, storageKey])
 
   function getPos(e: MouseEvent | TouchEvent) {
     const c = canvasRef.current!
@@ -66,15 +74,22 @@ export default function DrawingPad() {
         <button className="btn" onClick={() => {
           const c = canvasRef.current!
           const data = c.toDataURL()
-          localStorage.setItem('sticky-note', data)
-          alert('Saved')
+          localStorage.setItem(storageKey, data)
+          if (onSave) {
+            onSave(data)
+          } else {
+            alert('Saved')
+          }
         }}>Save</button>
         <button className="btn btn-ghost" onClick={() => {
           const c = canvasRef.current!
           const ctx = c.getContext('2d')!
           ctx.fillStyle = '#fff8c4'
           ctx.fillRect(0, 0, c.width, c.height)
-          localStorage.removeItem('sticky-note')
+          localStorage.removeItem(storageKey)
+          if (onSave) {
+            onSave('')
+          }
         }}>Clear</button>
       </div>
     </div>
