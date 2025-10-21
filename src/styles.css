@@ -1163,12 +1163,13 @@ button.btn + button.btn { margin-left: 8px }
 }
 
 .sidebar-icon {
-  width: 48px;
+  width: 56px;
   height: 48px;
   border: none;
   background: var(--card-bg);
   border-radius: 12px;
-  font-size: 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -1176,6 +1177,7 @@ button.btn + button.btn { margin-left: 8px }
   justify-content: center;
   box-shadow: var(--card-shadow);
   position: relative;
+  color: var(--text);
 }
 
 .sidebar-icon:hover {
@@ -1399,4 +1401,81 @@ button.btn + button.btn { margin-left: 8px }
   color: var(--text);
   font-size: 1rem;
   font-weight: 600;
+}
+
+/* Week View Meal Dropdown */
+.meal-dropdown-container {
+  position: relative;
+  width: 100%;
+}
+
+.meal-button {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+  color: var(--text);
+}
+
+.meal-button:hover {
+  background: var(--hover-bg);
+  border-color: var(--accent);
+}
+
+.meal-button.has-meal {
+  background: rgba(0, 162, 255, 0.1);
+  border-color: var(--accent);
+}
+
+.meal-button.no-meal {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.dropdown-arrow {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-left: 0.5rem;
+}
+
+.meal-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.meal-option {
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text);
+  transition: background 0.2s ease;
+}
+
+.meal-option:hover {
+  background: var(--hover-bg);
+}
+
+.meal-option:first-child {
+  color: var(--muted);
+  font-style: italic;
 }

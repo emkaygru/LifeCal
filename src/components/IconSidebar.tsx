@@ -20,7 +20,7 @@ export default function IconSidebar({ selectedDate }: IconSidebarProps) {
           onClick={() => togglePanel('meals')}
           title="Meal Planner"
         >
-          🍽️
+          Meals
         </button>
         
         <button 
@@ -28,7 +28,7 @@ export default function IconSidebar({ selectedDate }: IconSidebarProps) {
           onClick={() => togglePanel('todos')}
           title="Todos"
         >
-          ☑️
+          Todos
         </button>
         
         <button 
@@ -36,7 +36,7 @@ export default function IconSidebar({ selectedDate }: IconSidebarProps) {
           onClick={() => togglePanel('grocery')}
           title="Grocery List"
         >
-          🥛
+          Grocery
         </button>
       </div>
 

@@ -33,6 +33,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   const [showDayView, setShowDayView] = useState<boolean>(false)
   const [dayViewPosition, setDayViewPosition] = useState<{x: number, y: number, width: number, height: number} | undefined>()
   const [mealsUpdateTrigger, setMealsUpdateTrigger] = useState<number>(0)
+  const [activeMealDropdown, setActiveMealDropdown] = useState<string | null>(null)
 
   // Helper: base64 encode that works in browser & node
   const base64Encode = (s: string) => {
@@ -149,6 +150,45 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
     } catch {
       return null
     }
+  }
+
+  function saveMealForDay(date: Date, mealTitle: string) {
+    const dateKey = toKey(date)
+    const meals = JSON.parse(localStorage.getItem('meals') || '[]')
+    const existingMealIndex = meals.findIndex((m: any) => m.date === dateKey)
+    
+    if (existingMealIndex >= 0) {
+      meals[existingMealIndex].title = mealTitle
+    } else {
+      meals.push({
+        id: Date.now().toString(),
+        date: dateKey,
+        title: mealTitle,
+        groceries: []
+      })
+    }
+    
+    localStorage.setItem('meals', JSON.stringify(meals))
+    setMealsUpdateTrigger(prev => prev + 1)
+    window.dispatchEvent(new CustomEvent('meals-updated'))
+  }
+
+  function getMealOptions() {
+    return [
+      'No meal planned',
+      'Breakfast burrito',
+      'Avocado toast',
+      'Greek yogurt bowl',
+      'Smoothie bowl',
+      'Chicken salad',
+      'Turkey sandwich',
+      'Pasta primavera',
+      'Stir fry',
+      'Pizza',
+      'Tacos',
+      'Salmon dinner',
+      'Soup & salad'
+    ]
   }
 
   function percentDoneForDay(d: Date) {
@@ -301,7 +341,10 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
       )}
 
       {view === 'week' && (
-        <div className="week-view">
+        <div 
+          className="week-view"
+          onClick={() => setActiveMealDropdown(null)}
+        >
           <div 
             className="week-container"
             onWheel={(e) => {
@@ -392,10 +435,49 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
                   <div className="week-meal">
                     {(() => { 
                       const m = getMealForDay(d)
-                      return m ? (
-                        <div className="meal-badge">🍽️ {m.title}</div>
-                      ) : (
-                        <div className="no-meal">No meal planned</div>
+                      const dateKey = toKey(d)
+                      const isDropdownActive = activeMealDropdown === dateKey
+                      
+                      return (
+                        <div className="meal-dropdown-container">
+                          <button 
+                            className={`meal-button ${m ? 'has-meal' : 'no-meal'}`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setActiveMealDropdown(isDropdownActive ? null : dateKey)
+                            }}
+                          >
+                            {m ? `🍽️ ${m.title}` : 'No meal planned'}
+                            <span className="dropdown-arrow">{isDropdownActive ? '▲' : '▼'}</span>
+                          </button>
+                          
+                          {isDropdownActive && (
+                            <div className="meal-dropdown">
+                              {getMealOptions().map((option, index) => (
+                                <button
+                                  key={index}
+                                  className="meal-option"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (option === 'No meal planned') {
+                                      // Remove meal if exists
+                                      const meals = JSON.parse(localStorage.getItem('meals') || '[]')
+                                      const filtered = meals.filter((meal: any) => meal.date !== dateKey)
+                                      localStorage.setItem('meals', JSON.stringify(filtered))
+                                      setMealsUpdateTrigger(prev => prev + 1)
+                                      window.dispatchEvent(new CustomEvent('meals-updated'))
+                                    } else {
+                                      saveMealForDay(d, option)
+                                    }
+                                    setActiveMealDropdown(null)
+                                  }}
+                                >
+                                  {option}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )
                     })()}
                   </div>
