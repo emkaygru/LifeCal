@@ -25,6 +25,8 @@ export default function MealPopup({ onClose, selectedDate }: MealPopupProps) {
   const handleAddMeal = () => {
     if (!mealName.trim()) return
 
+    console.log(`🍽️ MealPopup: Adding meal "${mealName}" for ${date} (${mealType})`)
+
     // Add meal to meals list
     const meals = JSON.parse(localStorage.getItem('meals') || '[]')
     const newMeal = {
@@ -36,6 +38,7 @@ export default function MealPopup({ onClose, selectedDate }: MealPopupProps) {
     }
     meals.push(newMeal)
     localStorage.setItem('meals', JSON.stringify(meals))
+    console.log(`✅ MealPopup: Saved meal, total meals now:`, meals.length)
     window.dispatchEvent(new CustomEvent('meals-updated'))
 
     // Check for grocery suggestions

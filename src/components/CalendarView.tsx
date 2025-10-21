@@ -146,8 +146,11 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
     const trigger = mealsUpdateTrigger
     try {
       const meals = JSON.parse(localStorage.getItem('meals')||'[]')
-      return meals.find((m:any) => m.date === toKey(d))
-    } catch {
+      const meal = meals.find((m:any) => m.date === toKey(d))
+      console.log(`🍽️ Getting meal for ${toKey(d)}:`, meal, 'from', meals.length, 'total meals')
+      return meal
+    } catch (error) {
+      console.error('Error loading meals:', error)
       return null
     }
   }
@@ -157,18 +160,24 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
     const meals = JSON.parse(localStorage.getItem('meals') || '[]')
     const existingMealIndex = meals.findIndex((m: any) => m.date === dateKey)
     
+    console.log(`🍽️ Saving meal "${mealTitle}" for ${dateKey}`, { existingMealIndex, totalMeals: meals.length })
+    
     if (existingMealIndex >= 0) {
       meals[existingMealIndex].title = mealTitle
+      console.log('Updated existing meal at index', existingMealIndex)
     } else {
-      meals.push({
+      const newMeal = {
         id: Date.now().toString(),
         date: dateKey,
         title: mealTitle,
         groceries: []
-      })
+      }
+      meals.push(newMeal)
+      console.log('Added new meal:', newMeal)
     }
     
     localStorage.setItem('meals', JSON.stringify(meals))
+    console.log('✅ Saved to localStorage, total meals now:', meals.length)
     setMealsUpdateTrigger(prev => prev + 1)
     window.dispatchEvent(new CustomEvent('meals-updated'))
   }
