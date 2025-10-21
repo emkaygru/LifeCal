@@ -140,6 +140,17 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
     return events.filter((ev) => ev.start.toDateString() === d.toDateString())
   }
 
+  function getMealForDay(d: Date) {
+    // Force re-render when mealsUpdateTrigger changes
+    const trigger = mealsUpdateTrigger
+    try {
+      const meals = JSON.parse(localStorage.getItem('meals')||'[]')
+      return meals.find((m:any) => m.date === toKey(d))
+    } catch {
+      return null
+    }
+  }
+
   function percentDoneForDay(d: Date) {
     const key = toKey(d)
     try {
@@ -279,7 +290,10 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
                     return null
                   })()}
                 </div>
-                <div className="day-meal">{(() => { const m = JSON.parse(localStorage.getItem('meals')||'[]').find((mm:any)=>mm.date===toKey(d)); return m ? m.title : 'NO MEAL' })()}</div>
+                <div className="day-meal">{(() => { 
+                  const m = getMealForDay(d); 
+                  return m ? m.title : 'NO MEAL' 
+                })()}</div>
               </div>
             ))}
           </div>
@@ -377,7 +391,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
                   {/* Meal for this day */}
                   <div className="week-meal">
                     {(() => { 
-                      const m = JSON.parse(localStorage.getItem('meals')||'[]').find((mm:any)=>mm.date===toKey(d))
+                      const m = getMealForDay(d)
                       return m ? (
                         <div className="meal-badge">🍽️ {m.title}</div>
                       ) : (

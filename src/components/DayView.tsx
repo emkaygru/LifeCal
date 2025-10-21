@@ -316,12 +316,27 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
           
           {showGiphyPicker && (
             <div className="giphy-picker-popup">
+              <div className="giphy-picker-header">
+                <h4>Add Sticker</h4>
+                <button 
+                  className="close-giphy" 
+                  onClick={() => setShowGiphyPicker(false)}
+                >
+                  ×
+                </button>
+              </div>
               <GiphyPicker 
                 onSelect={addSticker}
                 searchTerm={isBirthday ? 'birthday celebration' : 'happy'}
               />
             </div>
           )}
+
+          {/* Drawing Pad Section */}
+          <div className="drawing-section">
+            <h4>Drawing & Notes</h4>
+            <DrawingPad />
+          </div>
         </div>
 
         {/* Meal Plan Section - Bottom */}
