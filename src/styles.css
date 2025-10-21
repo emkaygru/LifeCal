@@ -76,6 +76,9 @@ body{font-family: Inter, system-ui, -apple-system, 'Helvetica Neue', Arial; marg
 .day-detail{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .day-detail section{background:var(--card-bg);padding:8px;border-radius:6px;border:1px solid var(--border)}
 .day-detail .meal-ingredients{font-size:13px;color:var(--muted-2);margin-top:8px}
+.add-todo-inline{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.add-todo-inline input{flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.add-todo-inline .btn{padding:6px 12px}
 @media(max-width:800px){.day-detail{grid-template-columns:1fr}}
 .day-meal-edit .meal-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .day-meal-edit select{min-width:160px}

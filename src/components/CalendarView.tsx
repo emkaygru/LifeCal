@@ -27,6 +27,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   const [mealChoice, setMealChoice] = useState<string>('NO PLAN')
   const [multiOpen, setMultiOpen] = useState<boolean>(false)
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({}) // key by YYYY-MM-DD
+  const [newTodoText, setNewTodoText] = useState<string>('')
 
   // Helper: base64 encode that works in browser & node
   const base64Encode = (s: string) => {
@@ -143,6 +144,28 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
     } catch {
       return 0
     }
+  }
+
+  function addTodoForDay() {
+    if (!newTodoText.trim()) return
+    
+    const newTodo = {
+      id: Date.now().toString(),
+      title: newTodoText.trim(),
+      date: toKey(selectedDate),
+      status: 'todo',
+      done: false,
+      owner: 'user' // default owner
+    }
+    
+    const currentTodos = getTodos()
+    const updatedTodos = [...currentTodos, newTodo]
+    localStorage.setItem('todos', JSON.stringify(updatedTodos))
+    setTodosList(updatedTodos)
+    setNewTodoText('')
+    
+    // Dispatch event so other components know todos updated
+    window.dispatchEvent(new CustomEvent('todos-updated'))
   }
 
   // week helpers (Mon-Sun)
@@ -277,6 +300,24 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
 
           <section className="day-todos">
             <h4>To-dos</h4>
+            
+            <div className="add-todo-inline">
+              <input 
+                type="text" 
+                placeholder="Add todo for this day..." 
+                value={newTodoText}
+                onChange={(e) => setNewTodoText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    addTodoForDay()
+                  }
+                }}
+              />
+              <button className="btn" onClick={addTodoForDay} disabled={!newTodoText.trim()}>
+                Add
+              </button>
+            </div>
+
             {todosForDay(selectedDate).length === 0 && <div>No todos</div>}
             {todosForDay(selectedDate).map((t:any)=> (
               <div key={t.id} className="todo-row">
