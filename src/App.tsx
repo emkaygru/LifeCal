@@ -71,7 +71,10 @@ export default function App() {
   return (
     <div className="app">
       {currentPage === 'idle' ? (
-        <IdleSlideshow />
+        <IdleSlideshow onExit={() => {
+          setCurrentPage('calendar')
+          localStorage.setItem('currentPage', 'calendar')
+        }} />
       ) : (
         <>
           <header className="topbar">

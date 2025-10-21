@@ -1,44 +1,63 @@
 import React, { useState, useEffect } from 'react'
+import { FAMILY_PHOTOS } from '../config/photos'
 
 interface SlideshowImage {
   url: string
   id: string
 }
 
-export default function IdleSlideshow() {
+interface IdleSlideshowProps {
+  onExit: () => void
+}
+
+export default function IdleSlideshow({ onExit }: IdleSlideshowProps) {
   const [images, setImages] = useState<SlideshowImage[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch images from iCloud shared album
+  // Fetch images from configuration
   useEffect(() => {
-    const fetchImages = async () => {
+    const loadImages = () => {
       try {
         setLoading(true)
-        // Note: Direct iCloud shared album access requires special handling
-        // For now, we'll use a placeholder implementation
-        // In production, this would need server-side proxy or iCloud API integration
         
-        // Placeholder images for development
-        const mockImages: SlideshowImage[] = [
-          { id: '1', url: 'https://picsum.photos/1920/1080?random=1' },
-          { id: '2', url: 'https://picsum.photos/1080/1920?random=2' },
-          { id: '3', url: 'https://picsum.photos/1920/1080?random=3' },
-          { id: '4', url: 'https://picsum.photos/1080/1920?random=4' },
-          { id: '5', url: 'https://picsum.photos/1920/1080?random=5' },
-        ]
+        // Convert configured photo URLs to slideshow format
+        const images: SlideshowImage[] = FAMILY_PHOTOS.map((url, index) => ({
+          id: `photo-${index + 1}`,
+          url: url
+        }))
         
-        setImages(mockImages)
+        if (images.length === 0) {
+          setError('No photos configured. Please add photo URLs to src/config/photos.ts')
+          setLoading(false)
+          return
+        }
+        
+        console.log(`Loaded ${images.length} photos for slideshow`)
+        setImages(images)
         setLoading(false)
       } catch (err) {
-        setError('Failed to load images from shared album')
+        console.error('Failed to load photos:', err)
+        setError('Failed to load photos from configuration')
         setLoading(false)
       }
     }
 
-    fetchImages()
+    loadImages()
   }, [])
+
+  // Keyboard support for exit
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'q' || e.key === 'Q') {
+        onExit()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [onExit])
 
   // Auto-advance slideshow every 3.7 seconds
   useEffect(() => {
@@ -87,6 +106,11 @@ export default function IdleSlideshow() {
 
   return (
     <div className="slideshow-container">
+      {/* Exit Button */}
+      <button className="slideshow-exit" onClick={onExit} title="Exit Slideshow">
+        ×
+      </button>
+
       <div className="slideshow-image-wrapper">
         <img
           key={currentImage.id}
