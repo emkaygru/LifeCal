@@ -282,17 +282,66 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
           )}
         </div>
 
-        {/* Creative Canvas Section */}
-        <div className="day-canvas">
+        {/* Unified Scrapbook Canvas - Drawing + Stickers + Notes */}
+        <div className="scrapbook-canvas">
+          <div className="canvas-header">
+            <h4>Scrapbook & Notes</h4>
+            <div className="canvas-tools">
+              <button 
+                className="tool-btn"
+                onClick={() => setShowGiphyPicker(!showGiphyPicker)}
+                title="Add GIF/Sticker"
+              >
+                ✨ Stickers
+              </button>
+              
+              {['🎂', '🎉', '✨', '💖', '📝', '❤️'].map((emoji) => (
+                <button
+                  key={emoji}
+                  className="emoji-btn"
+                  onClick={() => {
+                    const newSticker: DaySticker = {
+                      id: `emoji-${Date.now()}-${emoji}`,
+                      url: '',
+                      title: emoji,
+                      x: Math.random() * 250 + 20,
+                      y: Math.random() * 150 + 20
+                    }
+                    saveStickers([...stickers, newSticker])
+                  }}
+                >
+                  {emoji}
+                </button>
+              ))}
+              
+              {stickers.length > 0 && (
+                <button 
+                  className={`tool-btn ${isEditMode ? 'active' : ''}`}
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  title="Edit mode"
+                >
+                  {isEditMode ? '✓ Done' : '✏️ Edit'}
+                </button>
+              )}
+            </div>
+          </div>
+          
           <div className="canvas-area">
-            {/* Stickers on canvas */}
+            {/* Drawing Pad integrated */}
+            <div className="drawing-container">
+              <DrawingPad />
+            </div>
+            
+            {/* Stickers overlay on canvas */}
             {stickers.map((sticker) => (
               <div
                 key={sticker.id}
                 className={`canvas-sticker ${isEditMode ? 'shake' : ''}`}
                 style={{ 
                   left: sticker.x + 'px', 
-                  top: sticker.y + 'px' 
+                  top: sticker.y + 'px',
+                  position: 'absolute',
+                  zIndex: 10
                 }}
                 draggable
                 onMouseDown={(e) => handleStickerMouseDown(sticker.id, e)}
@@ -307,9 +356,9 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
                 title={sticker.title}
               >
                 {sticker.url ? (
-                  <img src={sticker.url} alt={sticker.title} />
+                  <img src={sticker.url} alt={sticker.title} style={{width: '50px', height: '50px', borderRadius: '4px'}} />
                 ) : (
-                  <span className="emoji-sticker">{sticker.title}</span>
+                  <span className="emoji-sticker" style={{fontSize: '2rem'}}>{sticker.title}</span>
                 )}
                 
                 {isEditMode && (
@@ -323,54 +372,16 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
               </div>
             ))}
             
-            {/* Canvas Controls */}
-            <div className="canvas-tools">
-              <button 
-                className="tool-btn"
-                onClick={() => setShowGiphyPicker(!showGiphyPicker)}
-              >
-                ✨
-              </button>
-              
-              {['🎂', '🎉', '✨', '💖'].map((emoji) => (
-                <button
-                  key={emoji}
-                  className="emoji-btn"
-                  onClick={() => {
-                    const newSticker: DaySticker = {
-                      id: `emoji-${Date.now()}-${emoji}`,
-                      url: '',
-                      title: emoji,
-                      x: Math.random() * 200 + 20,
-                      y: Math.random() * 150 + 20
-                    }
-                    saveStickers([...stickers, newSticker])
-                  }}
-                >
-                  {emoji}
-                </button>
-              ))}
-              
-              {isEditMode && (
-                <button 
-                  className="tool-btn done-btn"
-                  onClick={() => setIsEditMode(false)}
-                >
-                  ✓
-                </button>
-              )}
+            {/* Text notes overlay */}
+            <div className="canvas-notes">
+              <textarea
+                value={notes}
+                onChange={(e) => saveNotes(e.target.value)}
+                placeholder="Add notes to your day..."
+                className="canvas-notes-input"
+                rows={2}
+              />
             </div>
-          </div>
-          
-          {/* Notes area */}
-          <div className="notes-area">
-            <textarea
-              value={notes}
-              onChange={(e) => saveNotes(e.target.value)}
-              placeholder="Quick notes..."
-              className="notes-input"
-              rows={3}
-            />
           </div>
           
           {showGiphyPicker && (
@@ -390,12 +401,6 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
               />
             </div>
           )}
-
-          {/* Drawing Pad Section */}
-          <div className="drawing-section">
-            <h4>Drawing & Notes</h4>
-            <DrawingPad />
-          </div>
         </div>
 
         {/* Meal Plan Section - Bottom */}

@@ -20,7 +20,7 @@ export default function IconSidebar({ selectedDate }: IconSidebarProps) {
           onClick={() => togglePanel('meals')}
           title="Meal Planner"
         >
-          Meals
+          🍽️
         </button>
         
         <button 
@@ -28,7 +28,7 @@ export default function IconSidebar({ selectedDate }: IconSidebarProps) {
           onClick={() => togglePanel('todos')}
           title="Todos"
         >
-          Todos
+          ☑️
         </button>
         
         <button 
@@ -36,7 +36,15 @@ export default function IconSidebar({ selectedDate }: IconSidebarProps) {
           onClick={() => togglePanel('grocery')}
           title="Grocery List"
         >
-          Grocery
+          🥛
+        </button>
+
+        <button 
+          className={`sidebar-icon ${activePanel === 'notes' ? 'active' : ''}`}
+          onClick={() => togglePanel('notes')}
+          title="Quick Notes"
+        >
+          📝
         </button>
       </div>
 
@@ -118,6 +126,54 @@ export default function IconSidebar({ selectedDate }: IconSidebarProps) {
                 <button className="quick-grocery">🍞 Bread</button>
                 <button className="quick-grocery">🥚 Eggs</button>
                 <button className="quick-grocery">🧀 Cheese</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activePanel === 'notes' && (
+        <div className="sidebar-panel">
+          <div className="panel-header">
+            <h3>Quick Notes</h3>
+            <button className="close-panel" onClick={() => setActivePanel(null)}>×</button>
+          </div>
+          <div className="panel-content">
+            <div className="notes-quick-add">
+              <textarea 
+                placeholder="Create a quick note or todo..." 
+                className="note-input"
+                rows={3}
+              />
+              <div className="note-actions">
+                <button className="btn btn-primary">Save as Note</button>
+                <button className="btn btn-secondary">Add to Todo</button>
+              </div>
+            </div>
+            
+            {/* Display saved notes */}
+            <div className="saved-notes">
+              <h4>Saved Notes</h4>
+              <div className="note-item" draggable>
+                <div className="note-content">
+                  <span className="note-text">Sample note that can be dragged to days</span>
+                  <span className="note-date">Oct 21</span>
+                </div>
+                <div className="note-actions-small">
+                  <button className="drag-btn" title="Drag to calendar">⋮⋮</button>
+                  <button className="delete-btn" title="Delete">×</button>
+                </div>
+              </div>
+              
+              <div className="note-item" draggable>
+                <div className="note-content">
+                  <span className="note-text">Another note example</span>
+                  <span className="note-date">Oct 20</span>
+                </div>
+                <div className="note-actions-small">
+                  <button className="drag-btn" title="Drag to calendar">⋮⋮</button>
+                  <button className="delete-btn" title="Delete">×</button>
+                </div>
               </div>
             </div>
           </div>
