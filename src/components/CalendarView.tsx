@@ -174,21 +174,30 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   }
 
   function getMealOptions() {
-    return [
+    // Get base meal options (same as DayView)
+    const baseMeals = [
       'No meal planned',
-      'Breakfast burrito',
-      'Avocado toast',
-      'Greek yogurt bowl',
-      'Smoothie bowl',
-      'Chicken salad',
-      'Turkey sandwich',
-      'Pasta primavera',
-      'Stir fry',
-      'Pizza',
-      'Tacos',
-      'Salmon dinner',
-      'Soup & salad'
+      'FACTOR 📦',
+      'Pasta Night 🍝', 
+      'Pizza 🍕',
+      'Tacos 🌮',
+      'Date Night 💕',
+      'Takeout 🥡'
     ]
+    
+    // Get existing custom meals from localStorage
+    try {
+      const meals = JSON.parse(localStorage.getItem('meals')||'[]') as any[]
+      const customTitles = Array.from(new Set(
+        (meals||[])
+          .map((m:any) => m.title)
+          .filter((x:any) => typeof x === 'string' && x !== '' && !baseMeals.includes(x))
+      )) as string[]
+      
+      return [...baseMeals, ...customTitles]
+    } catch { 
+      return baseMeals 
+    }
   }
 
   function percentDoneForDay(d: Date) {
@@ -467,7 +476,9 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
                                       setMealsUpdateTrigger(prev => prev + 1)
                                       window.dispatchEvent(new CustomEvent('meals-updated'))
                                     } else {
-                                      saveMealForDay(d, option)
+                                      // Clean the option (remove emojis for storage)
+                                      const cleanOption = option.replace(/\s*[\u{1F300}-\u{1F9FF}][\u{1F300}-\u{1F9FF}]?/gu, '').trim()
+                                      saveMealForDay(d, cleanOption)
                                     }
                                     setActiveMealDropdown(null)
                                   }}
