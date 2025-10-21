@@ -32,6 +32,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   const [newTodoOwner, setNewTodoOwner] = useState<string>('Emily')
   const [showDayView, setShowDayView] = useState<boolean>(false)
   const [dayViewPosition, setDayViewPosition] = useState<{x: number, y: number, width: number, height: number} | undefined>()
+  const [mealsUpdateTrigger, setMealsUpdateTrigger] = useState<number>(0)
 
   // Helper: base64 encode that works in browser & node
   const base64Encode = (s: string) => {
@@ -104,7 +105,11 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
 
   // refresh when meals change elsewhere
   useEffect(() => {
-    const h = () => { /* trigger re-render by updating state */ setEvents((e) => [...e]) }
+    const h = () => { 
+      /* trigger re-render by updating state */ 
+      setEvents((e) => [...e])
+      setMealsUpdateTrigger(prev => prev + 1)
+    }
     window.addEventListener('meals-updated', h)
     return () => window.removeEventListener('meals-updated', h)
   }, [])
@@ -555,7 +560,8 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
       {/* Enhanced Day View Modal */}
       {showDayView && (
         <DayView 
-          date={selectedDate} 
+          date={selectedDate}
+          events={eventsForDay(selectedDate)}
           onClose={() => setShowDayView(false)}
           initialPosition={dayViewPosition}
         />

@@ -10,13 +10,22 @@ interface DaySticker {
   y: number
 }
 
+interface EventItem {
+  id: string
+  title: string
+  start: Date
+  end: Date
+  description?: string
+}
+
 interface DayViewProps {
   date: Date
+  events?: EventItem[]
   onClose: () => void
   initialPosition?: { x: number, y: number, width: number, height: number }
 }
 
-export default function DayView({ date, onClose, initialPosition }: DayViewProps) {
+export default function DayView({ date, events = [], onClose, initialPosition }: DayViewProps) {
   const [stickers, setStickers] = useState<DaySticker[]>([])
   const [showGiphyPicker, setShowGiphyPicker] = useState(false)
   const [notes, setNotes] = useState('')
@@ -139,17 +148,19 @@ export default function DayView({ date, onClose, initialPosition }: DayViewProps
   const dateNumber = date.getDate()
   const monthName = date.toLocaleDateString('en-US', { month: 'short' })
 
-  // Get todos and events for this day (mock data for now)
+  // Get todos and events for this day
   const dayTodos = [
     { id: '1', title: 'Morning workout', done: false },
     { id: '2', title: 'Birthday prep', done: false },
     { id: '3', title: 'Grocery shopping', done: true }
   ]
 
-  const dayEvents = [
-    { time: '2:00 PM', title: 'Doctor Appt' },
-    { time: '6:00 PM', title: 'Dinner with friends' }
-  ]
+  // Use real events passed from CalendarView
+  const dayEvents = events.map(event => ({
+    time: event.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+    title: event.title,
+    description: event.description
+  }))
 
   return (
     <div className="day-view-overlay" onClick={onClose}>
