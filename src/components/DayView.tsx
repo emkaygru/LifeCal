@@ -281,55 +281,55 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
               ))
             )}
           </div>
+        </div>
 
-          {/* Puppy Section */}
-          <div className="day-puppy">
-            <h4>🐕 Maisie</h4>
-            {(() => {
-              const lastPotty = puppyStats.lastPotty
-              const pottyLogs = dayPuppyLogs.filter(log => log.type === 'pee' || log.type === 'poop')
-              const lastPottyToday = pottyLogs.length > 0 
-                ? pottyLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
-                : null
-              
-              const formatTime = (date: Date) => {
-                return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-              }
+        {/* Puppy Section */}
+        <div className="day-puppy">
+          <h4>🐕 Maisie</h4>
+          {(() => {
+            const lastPotty = puppyStats.lastPotty
+            const pottyLogs = dayPuppyLogs.filter(log => log.types.includes('pee') || log.types.includes('poop'))
+            const lastPottyToday = pottyLogs.length > 0 
+              ? pottyLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
+              : null
+            
+            const formatTime = (date: Date) => {
+              return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+            }
 
-              const getLastPottyInfo = () => {
-                if (!lastPottyToday) {
-                  return lastPotty ? (
-                    <div className="puppy-info">
-                      Last potty: {formatTime(lastPotty)} (yesterday)
-                    </div>
-                  ) : (
-                    <div className="puppy-info">No potty logged yet</div>
-                  )
-                }
-
-                // Check if there was both pee and poop at the same time (within 5 minutes)
-                const sameTimeLogs = pottyLogs.filter(log => 
-                  Math.abs(log.timestamp.getTime() - lastPottyToday.timestamp.getTime()) < 5 * 60 * 1000
-                )
-                
-                const hasPee = sameTimeLogs.some(log => log.type === 'pee')
-                const hasPoop = sameTimeLogs.some(log => log.type === 'poop')
-
-                let emoji = ''
-                if (hasPee && hasPoop) emoji = '💧💩'
-                else if (hasPee) emoji = '💧'
-                else if (hasPoop) emoji = '💩'
-
-                return (
+            const getLastPottyInfo = () => {
+              if (!lastPottyToday) {
+                return lastPotty ? (
                   <div className="puppy-info">
-                    Last potty: {formatTime(lastPottyToday.timestamp)} {emoji}
+                    Last potty: {formatTime(lastPotty)} (yesterday)
                   </div>
+                ) : (
+                  <div className="puppy-info">No potty logged yet</div>
                 )
               }
 
-              return getLastPottyInfo()
-            })()}
-          </div>
+              // Check if there was both pee and poop at the same time (within 5 minutes)
+              const sameTimeLogs = pottyLogs.filter(log => 
+                Math.abs(log.timestamp.getTime() - lastPottyToday.timestamp.getTime()) < 5 * 60 * 1000
+              )
+              
+              const hasPee = sameTimeLogs.some(log => log.types.includes('pee'))
+              const hasPoop = sameTimeLogs.some(log => log.types.includes('poop'))
+
+              let emoji = ''
+              if (hasPee && hasPoop) emoji = '💧💩'
+              else if (hasPee) emoji = '💧'
+              else if (hasPoop) emoji = '💩'
+
+              return (
+                <div className="puppy-info">
+                  Last potty: {formatTime(lastPottyToday.timestamp)} {emoji}
+                </div>
+              )
+            }
+
+            return getLastPottyInfo()
+          })()}
         </div>
 
         {/* Todos Section */}

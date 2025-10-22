@@ -6,7 +6,7 @@ interface PuppyLogProps {
 }
 
 export default function PuppyLog({ onClose }: PuppyLogProps) {
-  const [selectedType, setSelectedType] = useState<PuppyActivityType>('pee')
+  const [selectedTypes, setSelectedTypes] = useState<PuppyActivityType[]>(['pee'])
   const [location, setLocation] = useState('outside')
   const [amount, setAmount] = useState<'small' | 'medium' | 'large'>('medium')
   const [notes, setNotes] = useState('')
@@ -31,25 +31,30 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (selectedTypes.length === 0) {
+      alert('Please select at least one activity type')
+      return
+    }
+    
     const timestamp = customDateTime ? new Date(customDateTime) : new Date()
     
     if (editingEntry) {
       // Update existing entry
       updatePuppyLogEntry(editingEntry.id, {
-        type: selectedType,
+        types: selectedTypes,
         timestamp,
-        location: ['pee', 'poop'].includes(selectedType) ? location : undefined,
-        amount: ['food', 'treat'].includes(selectedType) ? amount : undefined,
+        location: selectedTypes.some(t => ['pee', 'poop'].includes(t)) ? location : undefined,
+        amount: selectedTypes.some(t => ['food', 'treat'].includes(t)) ? amount : undefined,
         notes: notes.trim() || undefined
       })
       setEditingEntry(null)
     } else {
       // Create new entry
       const entry = {
-        type: selectedType,
+        types: selectedTypes,
         timestamp,
-        location: ['pee', 'poop'].includes(selectedType) ? location : undefined,
-        amount: ['food', 'treat'].includes(selectedType) ? amount : undefined,
+        location: selectedTypes.some(t => ['pee', 'poop'].includes(t)) ? location : undefined,
+        amount: selectedTypes.some(t => ['food', 'treat'].includes(t)) ? amount : undefined,
         notes: notes.trim() || undefined
       }
       
@@ -68,7 +73,7 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
 
   const startEdit = (entry: PuppyLogEntry) => {
     setEditingEntry(entry)
-    setSelectedType(entry.type)
+    setSelectedTypes(entry.types)
     setLocation(entry.location || 'outside')
     setAmount(entry.amount || 'medium')
     setNotes(entry.notes || '')
@@ -83,7 +88,7 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
     setEditingEntry(null)
     setNotes('')
     setCustomDateTime('')
-    setSelectedType('pee')
+    setSelectedTypes(['pee'])
     setLocation('outside')
     setAmount('medium')
   }
@@ -187,9 +192,15 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
             <button
               key={type}
               type="button"
-              className={`activity-btn ${selectedType === type ? 'active' : ''}`}
+              className={`activity-btn ${selectedTypes.includes(type) ? 'active' : ''}`}
               style={{ '--activity-color': getActivityColor(type) } as React.CSSProperties}
-              onClick={() => setSelectedType(type)}
+              onClick={() => {
+                if (selectedTypes.includes(type)) {
+                  setSelectedTypes(selectedTypes.filter(t => t !== type))
+                } else {
+                  setSelectedTypes([...selectedTypes, type])
+                }
+              }}
             >
               <span className="activity-icon">{getActivityIcon(type)}</span>
               <span className="activity-name">{type.charAt(0).toUpperCase() + type.slice(1)}</span>
@@ -209,20 +220,20 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
         </div>
 
         {/* Location for potty activities */}
-        {['pee', 'poop'].includes(selectedType) && (
+        {selectedTypes.some(t => ['pee', 'poop'].includes(t)) && (
           <div className="form-group">
             <label>Location:</label>
             <select value={location} onChange={(e) => setLocation(e.target.value)}>
-              <option value="outside">Outside</option>
-              <option value="backyard">Backyard</option>
               <option value="inside">Inside</option>
-              <option value="walk">On Walk</option>
+              <option value="outside">Outside</option>
+              <option value="on walk">On Walk</option>
+              <option value="on turf">On Turf</option>
             </select>
           </div>
         )}
 
         {/* Amount for food/treats */}
-        {['food', 'treat'].includes(selectedType) && (
+        {selectedTypes.some(t => ['food', 'treat'].includes(t)) && (
           <div className="form-group">
             <label>Amount:</label>
             <select value={amount} onChange={(e) => setAmount(e.target.value as any)}>
@@ -245,7 +256,7 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
 
         <div className="form-actions">
           <button type="submit" className="log-btn">
-            {editingEntry ? 'Update' : 'Log'} {selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}
+            {editingEntry ? 'Update' : 'Log'} {selectedTypes.length === 1 ? selectedTypes[0].charAt(0).toUpperCase() + selectedTypes[0].slice(1) : 'Activities'}
           </button>
           {editingEntry && (
             <button type="button" className="cancel-btn" onClick={cancelEdit}>
@@ -262,10 +273,14 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
           {recentLogs.slice(0, 10).map((log) => (
             <div key={log.id} className="activity-item">
               <div className="activity-main">
-                <span className="activity-icon">{getActivityIcon(log.type)}</span>
+                <div className="activity-icons">
+                  {log.types.map(type => (
+                    <span key={type} className="activity-icon">{getActivityIcon(type)}</span>
+                  ))}
+                </div>
                 <div className="activity-details">
                   <span className="activity-type">
-                    {log.type.charAt(0).toUpperCase() + log.type.slice(1)}
+                    {log.types.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')}
                     {log.location && ` - ${log.location}`}
                     {log.amount && ` (${log.amount})`}
                   </span>

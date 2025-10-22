@@ -4,9 +4,9 @@ export type PuppyActivityType = 'pee' | 'poop' | 'food' | 'treat'
 export interface PuppyLogEntry {
   id: string
   timestamp: Date
-  type: PuppyActivityType
+  types: PuppyActivityType[] // Changed from 'type' to 'types' for multiple activities
   notes?: string
-  location?: string // inside, outside, backyard, etc.
+  location?: string // inside, outside, on walk, on turf
   amount?: 'small' | 'medium' | 'large' // for food/treats
 }
 
@@ -66,23 +66,23 @@ export function getPuppyStats(): PuppyStats {
   const todayLogs = logs.filter(log => log.timestamp >= today)
   
   // Find last potty (pee or poop)
-  const pottyLogs = logs.filter(log => log.type === 'pee' || log.type === 'poop')
+  const pottyLogs = logs.filter(log => log.types.includes('pee') || log.types.includes('poop'))
   const lastPotty = pottyLogs.length > 0 
     ? pottyLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0].timestamp
     : null
   
   // Find last food
-  const foodLogs = logs.filter(log => log.type === 'food')
+  const foodLogs = logs.filter(log => log.types.includes('food'))
   const lastFood = foodLogs.length > 0
     ? foodLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0].timestamp
     : null
   
   // Count today's activities
   const todayCount = {
-    pee: todayLogs.filter(log => log.type === 'pee').length,
-    poop: todayLogs.filter(log => log.type === 'poop').length,
-    food: todayLogs.filter(log => log.type === 'food').length,
-    treat: todayLogs.filter(log => log.type === 'treat').length
+    pee: todayLogs.filter(log => log.types.includes('pee')).length,
+    poop: todayLogs.filter(log => log.types.includes('poop')).length,
+    food: todayLogs.filter(log => log.types.includes('food')).length,
+    treat: todayLogs.filter(log => log.types.includes('treat')).length
   }
   
   return {
@@ -139,7 +139,7 @@ export function getPuppyLogsForDate(date: Date): PuppyLogEntry[] {
 export function getDayPottyCount(date: Date): { pee: number, poop: number } {
   const dayLogs = getPuppyLogsForDate(date)
   return {
-    pee: dayLogs.filter(log => log.type === 'pee').length,
-    poop: dayLogs.filter(log => log.type === 'poop').length
+    pee: dayLogs.filter(log => log.types.includes('pee')).length,
+    poop: dayLogs.filter(log => log.types.includes('poop')).length
   }
 }
