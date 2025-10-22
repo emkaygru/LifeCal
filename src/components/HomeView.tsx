@@ -9,8 +9,6 @@ interface HomeViewProps {
   onSelectDate?: (k: string) => void
   parking?: string
   setParking?: (parking: string) => void
-  sidebarState?: 'closed' | 'narrow' | 'expanded'
-  onSidebarStateChange?: (state: 'closed' | 'narrow' | 'expanded') => void
 }
 
 interface CardOrder {
@@ -21,7 +19,7 @@ interface CardOrder {
   props?: any
 }
 
-export default function HomeView({ selectedDate, onSelectDate, parking, setParking, sidebarState = 'closed', onSidebarStateChange }: HomeViewProps) {
+export default function HomeView({ selectedDate, onSelectDate, parking, setParking }: HomeViewProps) {
   const [cardOrder, setCardOrder] = useState<CardOrder[]>([
     {
       id: 'calendar',
@@ -83,8 +81,8 @@ export default function HomeView({ selectedDate, onSelectDate, parking, setParki
   }
 
   const handleIconClick = () => {
-    // When icon is clicked in expanded mode, go back to closed state
-    onSidebarStateChange?.('closed')
+    // Icon click functionality can be implemented later if needed
+    console.log('Card icon clicked')
   }
 
   // Load saved order and states on mount
@@ -135,7 +133,6 @@ export default function HomeView({ selectedDate, onSelectDate, parking, setParki
               onReorder={handleReorder}
               onExpandToggle={handleCardToggle}
               isDraggable={true}
-              sidebarState={sidebarState}
               onIconClick={handleIconClick}
             >
               <Component {...card.props} />

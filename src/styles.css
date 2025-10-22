@@ -63,6 +63,382 @@ body{font-family: Inter, system-ui, -apple-system, 'Helvetica Neue', Arial; marg
 .sync-indicator.syncing{animation:spin 1s linear infinite}
 .sync-status small{color:var(--muted);font-size:11px}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+/* Live/Edit Mode Layout System */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* Left Sidebar - Always Visible */
+.left-sidebar {
+  width: 80px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.left-sidebar-icons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.left-sidebar .sidebar-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--btn-bg);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.left-sidebar .sidebar-icon:hover {
+  background: var(--hover-bg);
+  transform: scale(1.05);
+}
+
+.left-sidebar .sidebar-icon.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* Parking Status Icon */
+.parking-status-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  margin-top: 8px;
+  opacity: 0.8;
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(0);
+}
+
+.main-content.live {
+  width: 100%;
+  opacity: 1;
+}
+
+.main-content.edit {
+  width: 50%;
+  min-width: 400px;
+  opacity: 0.95;
+}
+
+/* Compressed Home View for Edit Mode */
+.compressed-home {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.mode-indicator {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* Mode Toggle Button */
+.mode-toggle-btn {
+  position: fixed;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  background: var(--btn-bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 18px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.mode-toggle-btn:hover {
+  background: var(--accent);
+  color: white;
+  transform: translateY(-50%) scale(1.1) rotate(180deg);
+  box-shadow: 0 8px 24px rgba(0, 162, 255, 0.4);
+}
+
+.app-layout.edit .mode-toggle-btn {
+  right: calc(50% + 16px);
+  background: var(--accent);
+  color: white;
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.app-layout.edit .mode-toggle-btn:hover {
+  transform: translateY(-50%) scale(1.1) rotate(360deg);
+}
+
+/* Right Edit Panel */
+.right-edit-panel {
+  width: 50%;
+  min-width: 400px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  transition: all 0.3s ease-out;
+}
+
+.edit-panel-content {
+  height: 100%;
+}
+
+/* Right Edit Panel */
+.right-edit-panel {
+  width: 50%;
+  min-width: 400px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  transition: all 0.3s ease-out;
+}
+
+.edit-panel-content {
+  height: 100%;
+}
+
+.edit-panel-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.edit-panel-header h2 {
+  margin: 0 0 4px 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.edit-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.edit-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Meal Planning Grid */
+.meal-planning-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.meal-sub-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.meal-sub-card h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.card-placeholder {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Grocery Edit Content */
+.grocery-edit-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.grocery-search {
+  display: flex;
+  gap: 8px;
+}
+
+.grocery-search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.grocery-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.grocery-search-btn {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--btn-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.grocery-search-btn:hover {
+  background: var(--hover-bg);
+}
+
+.grocery-placeholder {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Parking Toggle Content */
+.parking-toggle-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.parking-options {
+  display: flex;
+  gap: 12px;
+}
+
+.parking-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.parking-option:hover {
+  background: var(--hover-bg);
+  border-color: var(--accent);
+}
+
+.parking-option.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.parking-icon {
+  font-size: 24px;
+}
+
+.parking-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.parking-status {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.panel-placeholder {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+  .app-layout {
+    flex-direction: column;
+  }
+  
+  .left-sidebar {
+    width: 100%;
+    height: 80px;
+    flex-direction: row;
+    padding: 8px 16px;
+  }
+  
+  .left-sidebar-icons {
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  .main-content.edit {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .right-edit-panel {
+    width: 100%;
+    min-width: auto;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  
+  .mode-toggle-btn {
+    bottom: 16px;
+    top: auto;
+    right: 16px;
+    transform: none;
+  }
+  
+  .app-layout.edit .mode-toggle-btn {
+    right: 16px;
+  }
+}
+
 .dashboard{display:flex;gap:0;padding:12px 0;flex-wrap:nowrap;height:100vh}
 .calendar-col{flex:1;min-width:320px;padding:12px;overflow-y:auto}
 

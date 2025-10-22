@@ -10,7 +10,8 @@ import MealPlanner from './components/MealPlanner'
 import PeopleManager from './components/PeopleManager'
 import LayoutCustomizer from './components/LayoutCustomizer'
 import EnhancedFAB from './components/EnhancedFAB'
-import IconSidebar from './components/IconSidebar'
+import LeftSidebar from './components/LeftSidebar'
+import EditPanel from './components/EditPanel'
 import { initSync } from './lib/sync'
 
 export default function App() {
@@ -27,40 +28,23 @@ export default function App() {
   const [user, setUser] = useState<string>(() => localStorage.getItem('user') || 'Emily')
   const [parking, setParking] = useState<string | null>(() => localStorage.getItem('parking') || null)
   const [syncStatus, setSyncStatus] = useState<'online' | 'offline' | 'syncing'>('offline')
-  const [sidebarState, setSidebarState] = useState<'closed' | 'narrow' | 'expanded'>(() => {
-    return (localStorage.getItem('sidebarState') as any) || 'narrow'
+  const [viewMode, setViewMode] = useState<'live' | 'edit'>(() => {
+    return (localStorage.getItem('viewMode') as any) || 'live'
   })
 
   function handleSelectDate(dateKey: string) {
     setSelectedDate(dateKey)
   }
 
-  function toggleSidebar() {
-    const nextState = sidebarState === 'closed' ? 'narrow' : 
-                      sidebarState === 'narrow' ? 'expanded' : 'closed'
-    setSidebarState(nextState)
-    localStorage.setItem('sidebarState', nextState)
+  function toggleViewMode() {
+    const nextMode = viewMode === 'live' ? 'edit' : 'live'
+    setViewMode(nextMode)
+    localStorage.setItem('viewMode', nextMode)
   }
 
-  function setSidebarWidth(state: 'closed' | 'narrow' | 'expanded') {
-    setSidebarState(state)
-    localStorage.setItem('sidebarState', state)
-  }
-
-  function handleSidebarResize(event: React.MouseEvent) {
-    // Get the mouse position relative to the window
-    const mouseX = event.clientX
-    const windowWidth = window.innerWidth
-    const relativePosition = mouseX / windowWidth
-
-    // Determine state based on position
-    if (relativePosition > 0.8) {
-      setSidebarWidth('closed')
-    } else if (relativePosition > 0.6) {
-      setSidebarWidth('narrow')
-    } else {
-      setSidebarWidth('expanded')
-    }
+  function setViewModeState(mode: 'live' | 'edit') {
+    setViewMode(mode)
+    localStorage.setItem('viewMode', mode)
   }
 
   // Initialize real-time sync
@@ -170,58 +154,47 @@ export default function App() {
                 <small>{syncStatus === 'online' ? 'Synced' : syncStatus === 'syncing' ? 'Syncing...' : 'Offline'}</small>
               </div>
             </div>
-          </header>          <main className={`dashboard ${sidebarState !== 'closed' ? 'sidebar-open' : ''}`}>
+          </header>
+          
+          <main className={`app-layout ${viewMode}`}>
             {currentPage === 'dashboard' ? (
               <Dashboard parking={parking} setParking={setParking} />
             ) : (
-              <div className={`main-layout ${sidebarState}`}>
-                <section className={`calendar-col ${sidebarState === 'expanded' ? 'collapsed' : ''}`}>
-                  <HomeView 
-                    selectedDate={selectedDate} 
-                    onSelectDate={handleSelectDate} 
-                    parking={parking} 
-                    setParking={setParking} 
-                    sidebarState={sidebarState}
-                    onSidebarStateChange={setSidebarWidth}
-                  />
+              <>
+                {/* Left Sidebar - always visible with icons */}
+                <LeftSidebar parking={parking} />
+
+                {/* Main Content Area */}
+                <section className={`main-content ${viewMode}`}>
+                  {viewMode === 'live' ? (
+                    <HomeView 
+                      selectedDate={selectedDate} 
+                      onSelectDate={handleSelectDate} 
+                      parking={parking} 
+                      setParking={setParking}
+                    />
+                  ) : (
+                    <div className="compressed-home">
+                      {/* Compressed view for edit mode - implement later */}
+                      <div className="mode-indicator">Edit Mode Active</div>
+                    </div>
+                  )}
                 </section>
 
-                {/* Floating Toggle Button - visible when sidebar is closed */}
-                {sidebarState === 'closed' && (
-                  <button className="floating-sidebar-toggle" onClick={toggleSidebar}>
-                    ←
-                  </button>
-                )}
+                {/* Mode Toggle Button */}
+                <button className="mode-toggle-btn" onClick={toggleViewMode}>
+                  {viewMode === 'live' ? '→' : '←'}
+                </button>
 
-                {/* Sliding Sidebar */}
-                <aside className={`sliding-sidebar ${sidebarState}`}>
-                  <div className="sidebar-header">
-                    <div className="sidebar-state-indicator">
-                      <span className="sidebar-title">
-                        {sidebarState === 'narrow' ? 'Quick View' : sidebarState === 'expanded' ? 'Detailed View' : 'Hidden'}
-                      </span>
-                      <div className="sidebar-state-dots">
-                        <span className={`state-dot ${sidebarState === 'closed' ? 'active' : ''}`}></span>
-                        <span className={`state-dot ${sidebarState === 'narrow' ? 'active' : ''}`}></span>
-                        <span className={`state-dot ${sidebarState === 'expanded' ? 'active' : ''}`}></span>
-                      </div>
-                    </div>
-                    <button className="sidebar-toggle" onClick={toggleSidebar}>
-                      {sidebarState === 'closed' ? '←' : sidebarState === 'narrow' ? '→' : '×'}
-                    </button>
-                  </div>
-                  <div className="sidebar-content">
-                    {sidebarState !== 'closed' && (
-                      <IconSidebar 
-                        selectedDate={selectedDate} 
-                        parking={parking} 
-                        setParking={setParking} 
-                        sidebarState={sidebarState}
-                      />
-                    )}
-                  </div>
-                </aside>
-              </div>
+                {/* Right Edit Panel - visible in edit mode */}
+                {viewMode === 'edit' && (
+                  <EditPanel 
+                    selectedDate={selectedDate}
+                    parking={parking}
+                    setParking={setParking}
+                  />
+                )}
+              </>
             )}
           </main>
 

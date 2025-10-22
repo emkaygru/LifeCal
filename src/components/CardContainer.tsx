@@ -9,7 +9,6 @@ interface CardContainerProps {
   onReorder?: (draggedId: string, targetId: string) => void
   onExpandToggle?: (id: string, isExpanded: boolean) => void
   isDraggable?: boolean
-  sidebarState?: 'closed' | 'narrow' | 'expanded'
   onIconClick?: () => void
 }
 
@@ -22,21 +21,12 @@ export default function CardContainer({
   onReorder,
   onExpandToggle,
   isDraggable = true,
-  sidebarState = 'closed',
   onIconClick
 }: CardContainerProps) {
   const [isExpanded, setIsExpanded] = useState(initialExpanded)
   const [isDragging, setIsDragging] = useState(false)
 
-  // Icon mode when sidebar is expanded
-  const isIconMode = sidebarState === 'expanded'
-
   const handleToggle = () => {
-    if (isIconMode) {
-      // In icon mode, clicking calls the icon click handler
-      onIconClick?.()
-      return
-    }
     const newExpanded = !isExpanded
     setIsExpanded(newExpanded)
     onExpandToggle?.(id, newExpanded)
@@ -70,56 +60,45 @@ export default function CardContainer({
 
   return (
     <div 
-      className={`card-container card ${isDragging ? 'dragging' : ''} ${!isExpanded ? 'collapsed' : ''} ${isIconMode ? 'icon-mode' : ''}`}
-      draggable={isDraggable && !isIconMode}
+      className={`card-container card ${isDragging ? 'dragging' : ''} ${!isExpanded ? 'collapsed' : ''}`}
+      draggable={isDraggable}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      {isIconMode ? (
-        // Icon Mode: Show only icon
-        <div className="card-icon-display" onClick={handleToggle}>
-          <span className="card-icon-large">{icon}</span>
-          <span className="card-icon-title">{title}</span>
-        </div>
-      ) : (
-        // Normal Mode: Show full card
-        <>
-          <div className="card-header">
-            {isDraggable && (
-              <div className="drag-handle">
-                <div className="grip-dots">
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                </div>
-              </div>
-            )}
-            
-            <div className="card-title">
-              <span className="card-icon">{icon}</span>
-              <h2>{title}</h2>
+      <div className="card-header">
+        {isDraggable && (
+          <div className="drag-handle">
+            <div className="grip-dots">
+              <div className="dot"></div>
+              <div className="dot"></div>
+              <div className="dot"></div>
+              <div className="dot"></div>
+              <div className="dot"></div>
+              <div className="dot"></div>
             </div>
-            
-            <button 
-              className="expand-toggle"
-              onClick={handleToggle}
-              title={isExpanded ? 'Collapse' : 'Expand'}
-            >
-              <span className={`arrow ${isExpanded ? 'expanded' : 'collapsed'}`}>▼</span>
-            </button>
           </div>
-          
-          {isExpanded && (
-            <div className="card-content">
-              {children}
-            </div>
-          )}
-        </>
+        )}
+        
+        <div className="card-title">
+          <span className="card-icon">{icon}</span>
+          <h2>{title}</h2>
+        </div>
+        
+        <button 
+          className="expand-toggle"
+          onClick={handleToggle}
+          title={isExpanded ? 'Collapse' : 'Expand'}
+        >
+          <span className={`arrow ${isExpanded ? 'expanded' : 'collapsed'}`}>▼</span>
+        </button>
+      </div>
+      
+      {isExpanded && (
+        <div className="card-content">
+          {children}
+        </div>
       )}
     </div>
   )
