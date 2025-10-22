@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import ICAL from 'ical.js'
 import { getTodos, updateTodoDate } from '../lib/store'
 import DayView from './DayView'
+import WeekViewCards from './WeekViewCards'
 
 function toKey(d: Date) {
   return d.toISOString().slice(0, 10)
@@ -38,6 +39,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate, 
   const [showDayView, setShowDayView] = useState<boolean>(false)
   const [dayViewPosition, setDayViewPosition] = useState<{x: number, y: number, width: number, height: number} | null>(null)
   const [viewDropdownOpen, setViewDropdownOpen] = useState<boolean>(false)
+  const [weekViewIndex, setWeekViewIndex] = useState(3) // Start with current day (middle of week)
   const [mealsUpdateTrigger, setMealsUpdateTrigger] = useState<number>(0)
   const [activeMealDropdown, setActiveMealDropdown] = useState<string | null>(null)
 
@@ -277,6 +279,18 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate, 
     })
   }
 
+  // Check if a day has notes or drawings for preview
+  function hasNotes(date: Date) {
+    const dateKey = toKey(date)
+    const savedStickers = localStorage.getItem(`stickers-${dateKey}`)
+    const savedDrawing = localStorage.getItem(`drawing-${dateKey}`)
+    
+    const hasStickers = savedStickers && JSON.parse(savedStickers).length > 0
+    const hasDrawing = savedDrawing && savedDrawing.length > 0
+    
+    return hasStickers || hasDrawing
+  }
+
   // keep mealChoice in sync with selected day
   useEffect(() => {
     const key = toKey(selectedDate)
@@ -450,19 +464,27 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate, 
       )}
 
       {view === 'week' && (
-        <div 
-          className="week-view"
-          onClick={() => setActiveMealDropdown(null)}
-        >
-          <div 
-            className="week-container"
-            onWheel={(e) => {
-              // Horizontal scrolling with mouse wheel
-              const container = e.currentTarget
-              container.scrollLeft += e.deltaY
-              e.preventDefault()
-            }}
-          >
+        <WeekViewCards
+          selectedDate={selectedDate}
+          onSelectDate={(key) => {
+            const date = new Date(key + 'T00:00:00')
+            setSelectedDate(date)
+            onSelectDate?.(key)
+          }}
+          onDoubleClick={(date, position) => {
+            setDayViewPosition(position)
+            setSelectedDate(date)
+            setShowDayView(true)
+          }}
+          events={events}
+          todos={todosList}
+        />
+      )}
+
+      {/* TEMP - need to clean up old week view code below */}
+      {false && (
+        <div className="old-week-view">
+          <div className="week-cards-container">
             {weekDates(selectedDate).map((d, index) => {
               const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
               const isSelected = toKey(d) === toKey(selectedDate)
