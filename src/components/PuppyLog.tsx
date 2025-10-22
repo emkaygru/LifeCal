@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { savePuppyLogEntry, getPuppyStats, getRecentPuppyLogs, deletePuppyLogEntry, PuppyActivityType, PuppyLogEntry } from '../lib/puppyLog'
+import { savePuppyLogEntry, getPuppyStats, getRecentPuppyLogs, deletePuppyLogEntry, updatePuppyLogEntry, PuppyActivityType, PuppyLogEntry } from '../lib/puppyLog'
 
 interface PuppyLogProps {
   onClose?: () => void
@@ -10,8 +10,10 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
   const [location, setLocation] = useState('outside')
   const [amount, setAmount] = useState<'small' | 'medium' | 'large'>('medium')
   const [notes, setNotes] = useState('')
+  const [customDateTime, setCustomDateTime] = useState('')
   const [recentLogs, setRecentLogs] = useState<PuppyLogEntry[]>([])
   const [stats, setStats] = useState(getPuppyStats())
+  const [editingEntry, setEditingEntry] = useState<PuppyLogEntry | null>(null)
 
   useEffect(() => {
     loadData()
@@ -29,21 +31,61 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    const entry = {
-      type: selectedType,
-      timestamp: new Date(),
-      location: ['pee', 'poop'].includes(selectedType) ? location : undefined,
-      amount: ['food', 'treat'].includes(selectedType) ? amount : undefined,
-      notes: notes.trim() || undefined
+    const timestamp = customDateTime ? new Date(customDateTime) : new Date()
+    
+    if (editingEntry) {
+      // Update existing entry
+      updatePuppyLogEntry(editingEntry.id, {
+        type: selectedType,
+        timestamp,
+        location: ['pee', 'poop'].includes(selectedType) ? location : undefined,
+        amount: ['food', 'treat'].includes(selectedType) ? amount : undefined,
+        notes: notes.trim() || undefined
+      })
+      setEditingEntry(null)
+    } else {
+      // Create new entry
+      const entry = {
+        type: selectedType,
+        timestamp,
+        location: ['pee', 'poop'].includes(selectedType) ? location : undefined,
+        amount: ['food', 'treat'].includes(selectedType) ? amount : undefined,
+        notes: notes.trim() || undefined
+      }
+      
+      savePuppyLogEntry(entry)
     }
     
-    savePuppyLogEntry(entry)
+    // Reset form
     setNotes('')
+    setCustomDateTime('')
     
     // Haptic feedback
     if ('vibrate' in navigator) {
       navigator.vibrate(50)
     }
+  }
+
+  const startEdit = (entry: PuppyLogEntry) => {
+    setEditingEntry(entry)
+    setSelectedType(entry.type)
+    setLocation(entry.location || 'outside')
+    setAmount(entry.amount || 'medium')
+    setNotes(entry.notes || '')
+    
+    // Format date for datetime-local input
+    const timestamp = new Date(entry.timestamp)
+    timestamp.setMinutes(timestamp.getMinutes() - timestamp.getTimezoneOffset())
+    setCustomDateTime(timestamp.toISOString().slice(0, 16))
+  }
+
+  const cancelEdit = () => {
+    setEditingEntry(null)
+    setNotes('')
+    setCustomDateTime('')
+    setSelectedType('pee')
+    setLocation('outside')
+    setAmount('medium')
   }
 
   const formatTime = (date: Date) => {
@@ -138,7 +180,7 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
 
       {/* Log Entry Form */}
       <form onSubmit={handleSubmit} className="log-form">
-        <h4>Log Activity</h4>
+        <h4>{editingEntry ? 'Edit Activity' : 'Log Activity'}</h4>
         
         <div className="activity-types">
           {(['pee', 'poop', 'food', 'treat'] as const).map((type) => (
@@ -153,6 +195,17 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
               <span className="activity-name">{type.charAt(0).toUpperCase() + type.slice(1)}</span>
             </button>
           ))}
+        </div>
+
+        {/* Custom Date/Time */}
+        <div className="form-group">
+          <label>Date & Time (leave empty for now):</label>
+          <input
+            type="datetime-local"
+            value={customDateTime}
+            onChange={(e) => setCustomDateTime(e.target.value)}
+            placeholder="Leave empty for current time"
+          />
         </div>
 
         {/* Location for potty activities */}
@@ -190,9 +243,16 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
           />
         </div>
 
-        <button type="submit" className="log-btn">
-          Log {selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}
-        </button>
+        <div className="form-actions">
+          <button type="submit" className="log-btn">
+            {editingEntry ? 'Update' : 'Log'} {selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}
+          </button>
+          {editingEntry && (
+            <button type="button" className="cancel-btn" onClick={cancelEdit}>
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
       {/* Recent Activity */}
@@ -209,17 +269,28 @@ export default function PuppyLog({ onClose }: PuppyLogProps) {
                     {log.location && ` - ${log.location}`}
                     {log.amount && ` (${log.amount})`}
                   </span>
-                  <span className="activity-time">{formatTime(log.timestamp)}</span>
+                  <span className="activity-time">
+                    {log.timestamp.toLocaleDateString()} {formatTime(log.timestamp)}
+                  </span>
                 </div>
               </div>
               {log.notes && <div className="activity-notes">{log.notes}</div>}
-              <button 
-                className="delete-log-btn"
-                onClick={() => deletePuppyLogEntry(log.id)}
-                title="Delete entry"
-              >
-                ✕
-              </button>
+              <div className="activity-actions">
+                <button 
+                  className="edit-log-btn"
+                  onClick={() => startEdit(log)}
+                  title="Edit entry"
+                >
+                  ✏️
+                </button>
+                <button 
+                  className="delete-log-btn"
+                  onClick={() => deletePuppyLogEntry(log.id)}
+                  title="Delete entry"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           ))}
         </div>

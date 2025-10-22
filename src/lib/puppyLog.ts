@@ -99,10 +99,47 @@ export function getRecentPuppyLogs(limit: number = 10): PuppyLogEntry[] {
     .slice(0, limit)
 }
 
+export function updatePuppyLogEntry(id: string, updates: Partial<Omit<PuppyLogEntry, 'id'>>): void {
+  const logs = getPuppyLogs()
+  const index = logs.findIndex(log => log.id === id)
+  
+  if (index !== -1) {
+    logs[index] = { 
+      ...logs[index], 
+      ...updates,
+      timestamp: updates.timestamp ? new Date(updates.timestamp) : logs[index].timestamp
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs))
+    
+    window.dispatchEvent(new CustomEvent('puppy-log-updated'))
+  }
+}
+
 export function deletePuppyLogEntry(id: string): void {
   const logs = getPuppyLogs()
   const filtered = logs.filter(log => log.id !== id)
   localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
   
   window.dispatchEvent(new CustomEvent('puppy-log-updated'))
+}
+
+export function getPuppyLogsForDate(date: Date): PuppyLogEntry[] {
+  const logs = getPuppyLogs()
+  const targetDate = new Date(date)
+  targetDate.setHours(0, 0, 0, 0)
+  const nextDay = new Date(targetDate)
+  nextDay.setDate(nextDay.getDate() + 1)
+  
+  return logs.filter(log => {
+    const logDate = new Date(log.timestamp)
+    return logDate >= targetDate && logDate < nextDay
+  })
+}
+
+export function getDayPottyCount(date: Date): { pee: number, poop: number } {
+  const dayLogs = getPuppyLogsForDate(date)
+  return {
+    pee: dayLogs.filter(log => log.type === 'pee').length,
+    poop: dayLogs.filter(log => log.type === 'poop').length
+  }
 }

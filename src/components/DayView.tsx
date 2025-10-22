@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import DrawingPad from './DrawingPad'
+import { getPuppyLogsForDate, getPuppyStats } from '../lib/puppyLog'
 
 interface DaySticker {
   id: string
@@ -37,6 +38,8 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
   const [isAnimating, setIsAnimating] = useState(true)
   const [currentTool, setCurrentTool] = useState<'draw' | 'emoji'>('draw')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [puppyStats, setPuppyStats] = useState(getPuppyStats())
+  const [dayPuppyLogs, setDayPuppyLogs] = useState(getPuppyLogsForDate(date))
 
   const dateKey = date.toISOString().split('T')[0]
 
@@ -68,6 +71,10 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
     }
     setTodos(dayTodos)
 
+    // Load puppy data
+    setPuppyStats(getPuppyStats())
+    setDayPuppyLogs(getPuppyLogsForDate(date))
+
     // Trigger animation
     setTimeout(() => setIsAnimating(false), 100)
   }, [dateKey])
@@ -86,12 +93,19 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
       setSelectedMeal(dayMeal ? dayMeal.title || '' : '')
     }
 
+    const handlePuppyLogUpdate = () => {
+      setPuppyStats(getPuppyStats())
+      setDayPuppyLogs(getPuppyLogsForDate(date))
+    }
+
     window.addEventListener('todos-updated', handleTodosUpdate)
     window.addEventListener('meals-updated', handleMealsUpdate)
+    window.addEventListener('puppy-log-updated', handlePuppyLogUpdate)
 
     return () => {
       window.removeEventListener('todos-updated', handleTodosUpdate)
       window.removeEventListener('meals-updated', handleMealsUpdate)
+      window.removeEventListener('puppy-log-updated', handlePuppyLogUpdate)
     }
   }, [dateKey])
 
@@ -266,6 +280,55 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
                 </div>
               ))
             )}
+          </div>
+
+          {/* Puppy Section */}
+          <div className="day-puppy">
+            <h4>🐕 Maisie</h4>
+            {(() => {
+              const lastPotty = puppyStats.lastPotty
+              const pottyLogs = dayPuppyLogs.filter(log => log.type === 'pee' || log.type === 'poop')
+              const lastPottyToday = pottyLogs.length > 0 
+                ? pottyLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
+                : null
+              
+              const formatTime = (date: Date) => {
+                return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+              }
+
+              const getLastPottyInfo = () => {
+                if (!lastPottyToday) {
+                  return lastPotty ? (
+                    <div className="puppy-info">
+                      Last potty: {formatTime(lastPotty)} (yesterday)
+                    </div>
+                  ) : (
+                    <div className="puppy-info">No potty logged yet</div>
+                  )
+                }
+
+                // Check if there was both pee and poop at the same time (within 5 minutes)
+                const sameTimeLogs = pottyLogs.filter(log => 
+                  Math.abs(log.timestamp.getTime() - lastPottyToday.timestamp.getTime()) < 5 * 60 * 1000
+                )
+                
+                const hasPee = sameTimeLogs.some(log => log.type === 'pee')
+                const hasPoop = sameTimeLogs.some(log => log.type === 'poop')
+
+                let emoji = ''
+                if (hasPee && hasPoop) emoji = '💧💩'
+                else if (hasPee) emoji = '💧'
+                else if (hasPoop) emoji = '💩'
+
+                return (
+                  <div className="puppy-info">
+                    Last potty: {formatTime(lastPottyToday.timestamp)} {emoji}
+                  </div>
+                )
+              }
+
+              return getLastPottyInfo()
+            })()}
           </div>
         </div>
 

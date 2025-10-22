@@ -3,6 +3,7 @@ import ICAL from 'ical.js'
 import { getTodos, updateTodoDate } from '../lib/store'
 import DayView from './DayView'
 import WeekViewCards from './WeekViewCards'
+import { getDayPottyCount } from '../lib/puppyLog'
 
 function toKey(d: Date) {
   return d.toISOString().slice(0, 10)
@@ -123,6 +124,16 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate, 
     return () => window.removeEventListener('meals-updated', h)
   }, [])
 
+  // refresh when puppy logs change
+  useEffect(() => {
+    const h = () => { 
+      /* trigger re-render by updating state */ 
+      setEvents((e) => [...e])
+    }
+    window.addEventListener('puppy-log-updated', h)
+    return () => window.removeEventListener('puppy-log-updated', h)
+  }, [])
+
   const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
   const daysInMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate()
 
@@ -147,6 +158,14 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate, 
 
   function eventsForDay(d: Date) {
     return events.filter((ev) => ev.start.toDateString() === d.toDateString())
+  }
+
+  function getPuppyDataForDay(d: Date) {
+    const counts = getDayPottyCount(d)
+    return {
+      peeCount: counts.pee,
+      poopCount: counts.poop
+    }
   }
 
   function getMealForDay(d: Date) {
@@ -453,10 +472,22 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate, 
                     return null
                   })()}
                 </div>
-                <div className="day-meal">{(() => { 
-                  const m = getMealForDay(d); 
-                  return m ? m.title : 'NO MEAL' 
-                })()}</div>
+                <div className="day-bottom">
+                  <div className="day-meal">{(() => { 
+                    const m = getMealForDay(d); 
+                    return m ? m.title : 'NO MEAL' 
+                  })()}</div>
+                  <div className="day-puppy">{(() => {
+                    const puppyData = getPuppyDataForDay(d)
+                    if (puppyData.peeCount === 0 && puppyData.poopCount === 0) return null
+                    return (
+                      <>
+                        {puppyData.peeCount > 0 && <span className="puppy-indicator">💧{puppyData.peeCount}</span>}
+                        {puppyData.poopCount > 0 && <span className="puppy-indicator">💩{puppyData.poopCount}</span>}
+                      </>
+                    )
+                  })()}</div>
+                </div>
               </div>
             ))}
           </div>
