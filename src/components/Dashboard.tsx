@@ -27,7 +27,7 @@ interface DashboardProps {
   setParking?: (parking: string | null) => void
 }
 
-export default function Dashboard({ parking, setParking }: DashboardProps = {}) {
+export default function Dashboard({ parking, setParking }: DashboardProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [todos, setTodos] = useState<TodoData[]>([])
   const [todaysEvents, setTodaysEvents] = useState<Event[]>([])

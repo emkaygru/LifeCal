@@ -11,6 +11,14 @@ interface EnhancedFABProps {
 export default function EnhancedFAB({ selectedDate }: EnhancedFABProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [activePopup, setActivePopup] = useState<string | null>(null)
+  const [currentOptionIndex, setCurrentOptionIndex] = useState(0)
+
+  const options = [
+    { type: 'meal', icon: '🍽️', label: 'Meal' },
+    { type: 'todo', icon: '📝', label: 'Todo' },
+    { type: 'sticker', icon: '✨', label: 'Sticker' },
+    { type: 'grocery', icon: '🛒', label: 'Grocery' }
+  ]
 
   const openPopup = (type: string) => {
     setActivePopup(type)
@@ -20,6 +28,16 @@ export default function EnhancedFAB({ selectedDate }: EnhancedFABProps) {
   const closePopup = () => {
     setActivePopup(null)
   }
+
+  const handleScroll = (direction: 'next' | 'prev') => {
+    if (direction === 'next') {
+      setCurrentOptionIndex((prev) => (prev + 1) % options.length)
+    } else {
+      setCurrentOptionIndex((prev) => (prev - 1 + options.length) % options.length)
+    }
+  }
+
+  const currentOption = options[currentOptionIndex]
 
   return (
     <>
@@ -33,45 +51,47 @@ export default function EnhancedFAB({ selectedDate }: EnhancedFABProps) {
             <span className={`fab-icon ${isOpen ? 'open' : ''}`}>+</span>
           </button>
           
-          {/* FAB Menu Items */}
+          {/* Scrollable FAB Options */}
           {isOpen && (
-            <div className="fab-options">
+            <div className="fab-scroll-container">
+              {/* Previous/Next Navigation */}
               <button 
-                className="fab-option meal"
-                onClick={() => openPopup('meal')}
-                style={{ '--delay': '100ms' } as React.CSSProperties}
-                title="Add Meal"
+                className="fab-nav fab-prev"
+                onClick={() => handleScroll('prev')}
               >
-                <span className="fab-icon">🍽️</span>
-                <span className="fab-label">Meal</span>
+                ←
               </button>
+              
+              {/* Current Option Display */}
+              <div className="fab-current-option">
+                <button 
+                  className="fab-option-active"
+                  onClick={() => openPopup(currentOption.type)}
+                  title={`Add ${currentOption.label}`}
+                >
+                  <span className="fab-icon">{currentOption.icon}</span>
+                  <span className="fab-label">{currentOption.label}</span>
+                </button>
+              </div>
+              
+              {/* Next Navigation */}
               <button 
-                className="fab-option todo"
-                onClick={() => openPopup('todo')}
-                style={{ '--delay': '150ms' } as React.CSSProperties}
-                title="Add Todo"
+                className="fab-nav fab-next"
+                onClick={() => handleScroll('next')}
               >
-                <span className="fab-icon">📝</span>
-                <span className="fab-label">Todo</span>
+                →
               </button>
-              <button 
-                className="fab-option sticker"
-                onClick={() => openPopup('sticker')}
-                style={{ '--delay': '200ms' } as React.CSSProperties}
-                title="Add Sticker"
-              >
-                <span className="fab-icon">✨</span>
-                <span className="fab-label">Sticker</span>
-              </button>
-              <button 
-                className="fab-option grocery"
-                onClick={() => openPopup('grocery')}
-                style={{ '--delay': '250ms' } as React.CSSProperties}
-                title="Add Grocery"
-              >
-                <span className="fab-icon">🛒</span>
-                <span className="fab-label">Grocery</span>
-              </button>
+              
+              {/* Option Indicators */}
+              <div className="fab-indicators">
+                {options.map((_, index) => (
+                  <div 
+                    key={index}
+                    className={`fab-indicator ${index === currentOptionIndex ? 'active' : ''}`}
+                    onClick={() => setCurrentOptionIndex(index)}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>

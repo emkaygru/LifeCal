@@ -274,69 +274,106 @@ button.btn + button.btn { margin-left: 8px }
   transform: rotate(45deg);
 }
 
-.fab-options {
+.fab-scroll-container {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
-.fab-option {
-  position: absolute;
-  min-width: 48px;
-  height: 48px;
-  border-radius: 25px;
+  bottom: 70px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  color: var(--text);
+  border-radius: 25px;
+  padding: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  animation: slideUp 300ms ease both;
+  max-width: calc(100vw - 80px);
+}
+
+.fab-nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  color: white;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: all 300ms ease;
-  pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 200ms ease;
+}
+
+.fab-nav:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 162, 255, 0.3);
+}
+
+.fab-current-option {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.fab-option-active {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
-  padding: 0 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(var(--accent-rgb, 0, 162, 255), 0.1);
+  border: 1px solid rgba(var(--accent-rgb, 0, 162, 255), 0.3);
+  border-radius: 20px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 200ms ease;
   white-space: nowrap;
 }
 
-.fab-option:hover {
+.fab-option-active:hover {
+  background: rgba(var(--accent-rgb, 0, 162, 255), 0.2);
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  background: rgba(var(--accent-rgb, 0, 162, 255), 0.1);
 }
 
-.fab-option .fab-icon {
+.fab-option-active .fab-icon {
   font-size: 18px;
-  flex-shrink: 0;
 }
 
-.fab-option .fab-label {
-  font-size: 12px;
+.fab-option-active .fab-label {
+  font-size: 13px;
   font-weight: 500;
 }
 
-/* Circular arrangement - positions options around the main FAB */
-.fab-option.meal {
-  animation: slideIn 300ms ease calc(var(--delay, 0ms)) both;
-  transform: translate(-50%, -50%) translateY(-90px);
+.fab-indicators {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
 }
 
-.fab-option.todo {
-  animation: slideIn 300ms ease calc(var(--delay, 0ms)) both;
-  transform: translate(-50%, -50%) translate(85px, -60px);
+.fab-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: all 200ms ease;
 }
 
-.fab-option.sticker {
-  animation: slideIn 300ms ease calc(var(--delay, 0ms)) both;
-  transform: translate(-50%, -50%) translate(90px, 20px);
+.fab-indicator.active {
+  background: var(--accent);
+  transform: scale(1.2);
 }
 
-.fab-option.grocery {
-  animation: slideIn 300ms ease calc(var(--delay, 0ms)) both;
-  transform: translate(-50%, -50%) translate(70px, 80px);
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideIn {
@@ -2250,6 +2287,28 @@ button.btn + button.btn { margin-left: 8px }
 /* Hide parking widget on desktop since sidebar has it */
 @media (min-width: 768px) {
   .parking-mobile {
+    display: none;
+  }
+}
+
+/* Make sure parking shows on mobile */
+@media (max-width: 767px) {
+  .parking-mobile {
+    display: flex !important;
+  }
+}
+
+/* Day view hint styling */
+.day-view-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-style: italic;
+  align-self: center;
+  margin-left: 1rem;
+}
+
+@media (max-width: 768px) {
+  .day-view-hint {
     display: none;
   }
 }

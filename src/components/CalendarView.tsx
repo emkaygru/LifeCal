@@ -23,7 +23,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
   const [loading, setLoading] = useState<boolean>(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [fetchError, setFetchError] = useState<string | null>(null)
-  const [view, setView] = useState<'month'|'week'|'day'>('month')
+  const [view, setView] = useState<'month'|'week'>('month')
   const [todosList, setTodosList] = useState<any[]>(getTodos())
   const [mealChoice, setMealChoice] = useState<string>('NO PLAN')
   const [multiOpen, setMultiOpen] = useState<boolean>(false)
@@ -309,7 +309,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
       <div className="view-controls">
         <button className={`btn ${view==='month'?'active':''}`} onClick={() => setView('month')}>Month</button>
         <button className={`btn ${view==='week'?'active':''}`} onClick={() => setView('week')}>Week</button>
-        <button className={`btn ${view==='day'?'active':''}`} onClick={() => setView('day')}>Day</button>
+        <span className="day-view-hint">Double-click any date to open day view</span>
       </div>
 
       {view === 'month' && (
