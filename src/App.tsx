@@ -190,6 +190,11 @@ export default function App() {
                       )}
                     </div>
                   </div>
+
+                  {/* Toggle Button - embedded in right sidebar */}
+                  <button className="sidebar-toggle-btn" onClick={toggleViewMode} title="Switch to Edit Mode">
+                    ←
+                  </button>
                 </aside>
               </>
             ) : (
@@ -202,6 +207,11 @@ export default function App() {
                     <button className="sidebar-icon" title="Todos">✅</button>  
                     <button className="sidebar-icon" title="Lists">📝</button>
                   </div>
+
+                  {/* Toggle Button - embedded in left sidebar */}
+                  <button className="sidebar-toggle-btn" onClick={toggleViewMode} title="Switch to Live Mode">
+                    →
+                  </button>
                 </aside>
 
                 {/* Right Content Area - Full Editing Cards */}
@@ -214,11 +224,6 @@ export default function App() {
                 </section>
               </>
             )}
-
-            {/* Mode Toggle Button */}
-            <button className="mode-toggle-btn" onClick={toggleViewMode}>
-              {viewMode === 'live' ? '←' : '→'}
-            </button>
           </main>
 
           {/* Enhanced Mobile Floating Action Button - only show on calendar page */}

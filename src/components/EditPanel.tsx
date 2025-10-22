@@ -3,6 +3,7 @@ import CardContainer from './CardContainer'
 import PuppyLog from './PuppyLog'
 import TodoContainer from './TodoContainer'
 import ListsContainer from './ListsContainer'
+import { GrocerySuggestions, MealPlannerBuilder, SurpriseMe } from './MealPlanningSubCards'
 
 interface EditPanelProps {
   selectedDate?: string | null
@@ -44,16 +45,13 @@ export default function EditPanel({ selectedDate, parking, setParking }: EditPan
           >
             <div className="meal-planning-grid">
               <div className="meal-sub-card">
-                <h4>Grocery Suggestions</h4>
-                <p className="card-placeholder">Auto-generated grocery suggestions based on meal plans</p>
+                <GrocerySuggestions />
               </div>
               <div className="meal-sub-card">
-                <h4>Meal Planner Builder</h4>
-                <p className="card-placeholder">Drag and drop meal planning interface</p>
+                <MealPlannerBuilder />
               </div>
               <div className="meal-sub-card">
-                <h4>Surprise Me</h4>
-                <p className="card-placeholder">Random meal suggestions (coming soon)</p>
+                <SurpriseMe />
               </div>
             </div>
           </CardContainer>
@@ -103,7 +101,7 @@ export default function EditPanel({ selectedDate, parking, setParking }: EditPan
             onExpandToggle={handleCardToggle}
             isDraggable={false}
           >
-            <PuppyLog selectedDate={selectedDate} />
+            <PuppyLog />
           </CardContainer>
 
           {/* Lists Card */}

@@ -5187,3 +5187,603 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   }
 }
 
+/* Meal Planning Sub-Cards Styles */
+.meal-planning-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 1200px) {
+  .meal-planning-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  .meal-planning-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.meal-sub-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Grocery Suggestions Styles */
+.grocery-suggestions-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.suggestions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.suggestions-header h4 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.suggestions-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: var(--hover-bg);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.suggestion-item:hover {
+  background: var(--card-bg);
+  transform: translateX(2px);
+}
+
+.suggestion-name {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.suggestions-stats {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Meal Builder Styles */
+.meal-builder-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.meal-builder-card h4 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.meal-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.form-input, .form-select {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.form-input:focus, .form-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,162,255,0.1);
+}
+
+.week-planner {
+  flex: 1;
+}
+
+.week-planner h5 {
+  margin: 0 0 0.75rem 0;
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.day-column {
+  background: var(--hover-bg);
+  border-radius: 6px;
+  padding: 0.5rem;
+  min-height: 80px;
+}
+
+.day-header {
+  text-align: center;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.day-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.day-number {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.day-meals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.no-meals {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 0.7rem;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.meal-item {
+  background: var(--card-bg);
+  border-radius: 4px;
+  padding: 0.25rem;
+  position: relative;
+  font-size: 0.7rem;
+}
+
+.meal-title {
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.remove-meal-btn {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff4757;
+  color: white;
+  border: none;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Surprise Me Styles */
+.surprise-me-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.surprise-me-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.card-description {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.surprise-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btn-surprise {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-surprise:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-surprise:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.suggestion-result {
+  background: var(--hover-bg);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid var(--border);
+}
+
+.suggestion-text {
+  margin-bottom: 1rem;
+}
+
+.suggestion-label {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.suggestion-meal {
+  margin: 0.25rem 0 0 0;
+  color: var(--accent);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.suggestion-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Button variations */
+.btn-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 6px;
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--hover-bg);
+}
+
+.empty-state {
+  color: var(--muted);
+  font-style: italic;
+  text-align: center;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+/* Sidebar Toggle Buttons - Embedded in sidebars */
+.sidebar-toggle-btn {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 162, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+}
+
+.sidebar-toggle-btn:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 162, 255, 0.4);
+  background: #0090e0;
+}
+
+.sidebar-toggle-btn:active {
+  transform: translateX(-50%) translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 162, 255, 0.3);
+}
+
+/* Ensure sidebars have relative positioning for absolute positioned toggle buttons */
+.sidebar-left, .sidebar-right {
+  position: relative;
+}
+
+/* Hide the old mode toggle button */
+.mode-toggle-btn {
+  display: none;
+}
+
+/* Enhanced Meal Planner Styles */
+.meal-option-selector {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.meal-option-selector label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.day-selector {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--hover-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.day-selector label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.day-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.day-selector-btn {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+.day-selector-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.day-selector-btn.selected {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 162, 255, 0.3);
+}
+
+.day-btn-name {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.day-btn-date {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.day-selector-btn.selected .day-btn-date {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.selected-days-summary {
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.selected-days-summary small {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.fourteen-day-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.day-column.today {
+  background: rgba(0, 162, 255, 0.1);
+  border: 1px solid var(--accent);
+}
+
+.day-month {
+  color: var(--muted);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Restaurant Finder Styles */
+.surprise-type-selector {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.surprise-type-selector label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.restaurant-suggestions {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--hover-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.restaurant-header {
+  margin-bottom: 1rem;
+}
+
+.location-info {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.restaurant-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.restaurant-option:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.restaurant-option:last-child {
+  margin-bottom: 0;
+}
+
+.restaurant-info {
+  flex: 1;
+}
+
+.restaurant-name {
+  margin: 0 0 0.25rem 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.restaurant-cuisine {
+  margin: 0 0 0.5rem 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.restaurant-website {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.restaurant-website:hover {
+  color: #0080cc;
+  text-decoration: underline;
+}
+
+/* Enhanced Grocery Suggestions */
+.suggestions-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.bulk-actions {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--accent);
+  color: white;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.suggestion-item.selectable {
+  cursor: pointer;
+  padding: 0.75rem 0.5rem;
+}
+
+.suggestion-item.selected {
+  background: rgba(0, 162, 255, 0.1);
+  border-left: 3px solid var(--accent);
+}
+
+.suggestion-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.suggestion-checkbox input[type="checkbox"] {
+  accent-color: var(--accent);
+  margin: 0;
+}
+
