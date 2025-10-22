@@ -26,7 +26,7 @@ export default function EditPanel({ selectedDate, parking, setParking }: EditPan
   }
 
   return (
-    <aside className="right-edit-panel">
+    <div className="edit-panel-container">
       <div className="edit-panel-content">
         <div className="edit-panel-header">
           <h2>Edit Mode</h2>
@@ -149,6 +149,6 @@ export default function EditPanel({ selectedDate, parking, setParking }: EditPan
           </CardContainer>
         </div>
       </div>
-    </aside>
+    </div>
   )
 }

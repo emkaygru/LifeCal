@@ -107,7 +107,30 @@ body{font-family: Inter, system-ui, -apple-system, 'Helvetica Neue', Arial; marg
   flex: 1;
   padding: 12px;
   overflow-y: auto;
+  width: 100%;
+  max-width: none;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Edit Panel Container - Full Width */
+.edit-panel-container {
+  width: 100%;
+  height: 100%;
+  background: var(--surface);
+}
+
+.edit-panel-content {
+  height: 100%;
+  max-width: none;
+  width: 100%;
+}
+
+.edit-cards-container {
+  width: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 /* Sidebar Icons - Shared Styles */
@@ -5192,17 +5215,18 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
+  width: 100%;
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 900px) {
   .meal-planning-grid {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 }
 
-@media (min-width: 900px) and (max-width: 1199px) {
+@media (min-width: 1400px) {
   .meal-planning-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }
 
@@ -5214,6 +5238,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   min-height: 300px;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  flex: 1;
 }
 
 /* Grocery Suggestions Styles */
