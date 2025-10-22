@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import DrawingPad from './DrawingPad'
-import { GiphyPicker } from './GiphyPicker'
 
 interface DaySticker {
   id: string
@@ -27,7 +26,7 @@ interface DayViewProps {
 
 export default function DayView({ date, events = [], onClose, initialPosition }: DayViewProps) {
   const [stickers, setStickers] = useState<DaySticker[]>([])
-  const [showGiphyPicker, setShowGiphyPicker] = useState(false)
+
   const [notes, setNotes] = useState('')
   const [drawing, setDrawing] = useState('')
   const [selectedMeal, setSelectedMeal] = useState('')
@@ -36,6 +35,8 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
   const [editingStickerId, setEditingStickerId] = useState<string | null>(null)
   const [holdTimer, setHoldTimer] = useState<NodeJS.Timeout | null>(null)
   const [isAnimating, setIsAnimating] = useState(true)
+  const [currentTool, setCurrentTool] = useState<'draw' | 'emoji'>('draw')
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
 
   const dateKey = date.toISOString().split('T')[0]
 
@@ -114,7 +115,6 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
     }
     
     saveStickers([...stickers, newSticker])
-    setShowGiphyPicker(false)
   }
 
   function moveSticker(stickerId: string, x: number, y: number) {
@@ -347,118 +347,90 @@ export default function DayView({ date, events = [], onClose, initialPosition }:
         </div>
 
         {/* Notes: Whiteboard Canvas */}
-        <div className="scrapbook-canvas">
-          <h4>Notes:</h4>
-          
+        <div className="notes-canvas">          
           <div className="canvas-tools">
-            <button 
-              className="tool-btn"
-              onClick={() => setShowGiphyPicker(!showGiphyPicker)}
-              title="Add GIF/Sticker"
-            >
-              ✨
-            </button>
-            
-            {['🎂', '🎉', '✨', '💖', '📝', '❤️'].map((emoji) => (
-              <button
-                key={emoji}
-                className="emoji-btn"
+            <div className="tool-group">
+              <button 
+                className={`tool-btn ${currentTool === 'draw' ? 'active' : ''}`} 
+                title="Draw"
                 onClick={() => {
-                  const newSticker: DaySticker = {
-                    id: `emoji-${Date.now()}-${emoji}`,
-                    url: '',
-                    title: emoji,
-                    x: Math.random() * 200 + 20,
-                    y: Math.random() * 120 + 20
-                  }
-                  saveStickers([...stickers, newSticker])
+                  setCurrentTool('draw')
+                  setShowEmojiPicker(false)
                 }}
               >
-                {emoji}
+                ✏️
               </button>
-            ))}
-            
-            {editingStickerId && (
               <button 
-                className="tool-btn"
-                onClick={() => setEditingStickerId(null)}
-                title="Stop editing"
+                className={`tool-btn ${currentTool === 'emoji' ? 'active' : ''}`} 
+                title="Add Emoji"
+                onClick={() => {
+                  setCurrentTool('emoji')
+                  setShowEmojiPicker(!showEmojiPicker)
+                }}
               >
-                ✓ Done
+                😊
               </button>
+            </div>
+            
+            {showEmojiPicker && (
+              <div className="emoji-picker">
+                {['😊', '❤️', '🎉', '✨', '📝', '☀️', '🌙', '⭐', '🏠', '🍕'].map((emoji) => (
+                <button
+                  key={emoji}
+                  className="emoji-option"
+                  onClick={() => {
+                    // Add emoji to canvas at random position
+                    const newSticker: DaySticker = {
+                      id: `emoji-${Date.now()}-${emoji}`,
+                      url: '',
+                      title: emoji,
+                      x: Math.random() * 200 + 20,
+                      y: Math.random() * 120 + 20
+                    }
+                    saveStickers([...stickers, newSticker])
+                    setShowEmojiPicker(false)
+                  }}
+                >
+                  {emoji}
+                </button>
+                ))}
+              </div>
             )}
           </div>
           
-          <div className="canvas-area">
-            {/* Drawing Pad integrated */}
-            <div className="drawing-container">
-              <DrawingPad />
-            </div>
+          <div className="drawing-canvas">
+            <DrawingPad />
             
-            {/* Stickers overlay on canvas */}
+            {/* Emoji stickers overlay */}
             {stickers.map((sticker) => (
               <div
                 key={sticker.id}
-                className={`canvas-sticker ${editingStickerId === sticker.id ? 'shake' : ''}`}
+                className="emoji-sticker"
                 style={{ 
                   left: sticker.x + 'px', 
                   top: sticker.y + 'px',
                   position: 'absolute',
-                  zIndex: 10
+                  zIndex: 10,
+                  fontSize: '24px',
+                  cursor: 'move',
+                  userSelect: 'none'
                 }}
                 draggable
-                onMouseDown={(e) => {
-                  handleStickerMouseDown(sticker.id, e)
-                }}
-                onMouseUp={handleStickerMouseUp}
-                onMouseLeave={handleStickerMouseUp}
-                onClick={(e) => {
-                  handleStickerClick(sticker.id, e)
-                }}
                 onDragEnd={(e) => {
                   const rect = e.currentTarget.parentElement!.getBoundingClientRect()
-                  const x = Math.max(0, Math.min(e.clientX - rect.left - 25, rect.width - 50))
-                  const y = Math.max(0, Math.min(e.clientY - rect.top - 25, rect.height - 50))
+                  const x = Math.max(0, Math.min(e.clientX - rect.left - 12, rect.width - 24))
+                  const y = Math.max(0, Math.min(e.clientY - rect.top - 12, rect.height - 24))
                   moveSticker(sticker.id, x, y)
-                  setEditingStickerId(null) // Clear edit mode after drag
                 }}
-                title={sticker.title}
+                onDoubleClick={() => removeSticker(sticker.id)}
+                title="Double-click to remove"
               >
-                {sticker.url ? (
-                  <img src={sticker.url} alt={sticker.title} style={{width: '40px', height: '40px', borderRadius: '4px'}} />
-                ) : (
-                  <span className="emoji-sticker" style={{fontSize: '1.5rem'}}>{sticker.title}</span>
-                )}
-                
-                {editingStickerId === sticker.id && (
-                  <button 
-                    className="delete-sticker-btn"
-                    onClick={() => removeSticker(sticker.id)}
-                  >
-                    ✕
-                  </button>
-                )}
+                {sticker.title}
               </div>
             ))}
           </div>
           
-          {showGiphyPicker && (
-            <div className="giphy-picker-popup">
-              <div className="giphy-picker-header">
-                <h4>Add Sticker</h4>
-                <button 
-                  className="close-giphy" 
-                  onClick={() => setShowGiphyPicker(false)}
-                >
-                  ×
-                </button>
-              </div>
-              <GiphyPicker 
-                onSelect={addSticker}
-                searchTerm={isBirthday ? 'birthday celebration' : 'happy'}
-              />
-            </div>
-          )}
+
         </div>
 
         {/* Meal Plan Section - Bottom */}
