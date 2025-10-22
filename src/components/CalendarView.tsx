@@ -36,7 +36,8 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate, 
   const [newTodoText, setNewTodoText] = useState<string>('')
   const [newTodoOwner, setNewTodoOwner] = useState<string>('Emily')
   const [showDayView, setShowDayView] = useState<boolean>(false)
-  const [dayViewPosition, setDayViewPosition] = useState<{x: number, y: number, width: number, height: number} | undefined>()
+  const [dayViewPosition, setDayViewPosition] = useState<{x: number, y: number, width: number, height: number} | null>(null)
+  const [viewDropdownOpen, setViewDropdownOpen] = useState<boolean>(false)
   const [mealsUpdateTrigger, setMealsUpdateTrigger] = useState<number>(0)
   const [activeMealDropdown, setActiveMealDropdown] = useState<string | null>(null)
 
@@ -286,6 +287,21 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate, 
     } catch { setMealChoice('NO PLAN') }
   }, [selectedDate])
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('.view-selector')) {
+        setViewDropdownOpen(false)
+      }
+    }
+
+    if (viewDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [viewDropdownOpen])
+
   const availableMealTitles: string[] = (() => {
     try {
       const meals = JSON.parse(localStorage.getItem('meals')||'[]') as any[]
@@ -328,10 +344,63 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate, 
         <button className="btn" onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))}>{'>'}</button>
       </div>
 
-      <div className="view-controls">
-        <button className={`btn ${view==='month'?'active':''}`} onClick={() => setView('month')}>Month</button>
-        <button className={`btn ${view==='week'?'active':''}`} onClick={() => setView('week')}>Week</button>
-        <span className="day-view-hint">Double-click any date to open day view</span>
+      <div className="view-selector">
+        <button 
+          className="view-dropdown-trigger" 
+          onClick={() => setViewDropdownOpen(!viewDropdownOpen)}
+          aria-expanded={viewDropdownOpen}
+        >
+          <span className="current-view">{view === 'month' ? 'Month View' : 'Week View'}</span>
+          <svg 
+            className={`dropdown-arrow ${viewDropdownOpen ? 'open' : ''}`} 
+            width="12" 
+            height="8" 
+            viewBox="0 0 12 8" 
+            fill="none"
+          >
+            <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        
+        {viewDropdownOpen && (
+          <div className="view-dropdown">
+            <button 
+              className={`view-option ${view === 'month' ? 'active' : ''}`}
+              onClick={() => {
+                setView('month');
+                setViewDropdownOpen(false);
+              }}
+            >
+              <span className="view-icon">📅</span>
+              <div className="view-details">
+                <span className="view-name">Month View</span>
+                <span className="view-description">Full month calendar grid</span>
+              </div>
+            </button>
+            
+            <button 
+              className={`view-option ${view === 'week' ? 'active' : ''}`}
+              onClick={() => {
+                setView('week');
+                setViewDropdownOpen(false);
+              }}
+            >
+              <span className="view-icon">📋</span>
+              <div className="view-details">
+                <span className="view-name">Week View</span>
+                <span className="view-description">7-day weekly overview</span>
+              </div>
+            </button>
+            
+            <div className="view-option disabled">
+              <span className="view-icon">📄</span>
+              <div className="view-details">
+                <span className="view-name">Day View</span>
+                <span className="view-description">Double-click any date</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {view === 'month' && (
