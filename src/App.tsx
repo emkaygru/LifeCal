@@ -140,7 +140,7 @@ export default function App() {
             </div>
           </header>          <main className="dashboard">
             {currentPage === 'dashboard' ? (
-              <Dashboard />
+              <Dashboard parking={parking} setParking={setParking} />
             ) : (
               <>
                 <section className="calendar-col">

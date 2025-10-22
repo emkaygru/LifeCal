@@ -39,30 +39,38 @@ export default function EnhancedFAB({ selectedDate }: EnhancedFABProps) {
               <button 
                 className="fab-option meal"
                 onClick={() => openPopup('meal')}
-                style={{ '--delay': '0.1s' } as React.CSSProperties}
+                style={{ '--delay': '100ms' } as React.CSSProperties}
+                title="Add Meal"
               >
-                🍽️
+                <span className="fab-icon">🍽️</span>
+                <span className="fab-label">Meal</span>
               </button>
               <button 
                 className="fab-option todo"
                 onClick={() => openPopup('todo')}
-                style={{ '--delay': '0.2s' } as React.CSSProperties}
+                style={{ '--delay': '150ms' } as React.CSSProperties}
+                title="Add Todo"
               >
-                📝
+                <span className="fab-icon">📝</span>
+                <span className="fab-label">Todo</span>
               </button>
               <button 
                 className="fab-option sticker"
                 onClick={() => openPopup('sticker')}
-                style={{ '--delay': '0.3s' } as React.CSSProperties}
+                style={{ '--delay': '200ms' } as React.CSSProperties}
+                title="Add Sticker"
               >
-                ✨
+                <span className="fab-icon">✨</span>
+                <span className="fab-label">Sticker</span>
               </button>
               <button 
                 className="fab-option grocery"
                 onClick={() => openPopup('grocery')}
-                style={{ '--delay': '0.4s' } as React.CSSProperties}
+                style={{ '--delay': '250ms' } as React.CSSProperties}
+                title="Add Grocery"
               >
-                🛒
+                <span className="fab-icon">🛒</span>
+                <span className="fab-label">Grocery</span>
               </button>
             </div>
           )}

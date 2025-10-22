@@ -22,7 +22,12 @@ interface Event {
   location?: string
 }
 
-export default function Dashboard() {
+interface DashboardProps {
+  parking?: string | null
+  setParking?: (parking: string | null) => void
+}
+
+export default function Dashboard({ parking, setParking }: DashboardProps = {}) {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [todos, setTodos] = useState<TodoData[]>([])
   const [todaysEvents, setTodaysEvents] = useState<Event[]>([])
@@ -138,9 +143,27 @@ export default function Dashboard() {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h1>Family Dashboard</h1>
-        <div className="datetime">
-          <div className="date">{formatDate(currentDate)}</div>
-          <div className="time">{formatTime(currentDate)}</div>
+        <div className="header-right">
+          <div className="parking-mobile">
+            <span>🚗</span>
+            <select 
+              value={parking || ''} 
+              onChange={(e) => {
+                const newParking = e.target.value || null
+                setParking(newParking)
+                localStorage.setItem('parking', newParking || '')
+              }}
+              className="parking-select"
+            >
+              <option value="">No parking set</option>
+              <option value="P2">Parked in P2</option>
+              <option value="P3">Parked in P3</option>
+            </select>
+          </div>
+          <div className="datetime">
+            <div className="date">{formatDate(currentDate)}</div>
+            <div className="time">{formatTime(currentDate)}</div>
+          </div>
         </div>
       </div>
 
