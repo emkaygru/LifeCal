@@ -18,7 +18,12 @@ type EventItem = {
 // Your public calendar (webcal). Converted webcal -> https for browser fetch.
 const PUBLIC_ICAL_URL = 'https://p131-caldav.icloud.com/published/2/MjEwMDk1ODQyMjEwMDk1OAAGTcEcX0zn4rLjv-0NbqlOx5SoeTqOKOi2X9xNhJPMRqvkVBayYMk6aS3MHrIBMv8AsDzrttK6IkwycW7iXbE'
 
-export default function CalendarView({ selectedDate: selectedKey, onSelectDate }: { selectedDate?: string | null; onSelectDate?: (k: string) => void }) {
+export default function CalendarView({ selectedDate: selectedKey, onSelectDate, parking, setParking }: { 
+  selectedDate?: string | null; 
+  onSelectDate?: (k: string) => void;
+  parking?: string;
+  setParking?: (parking: string) => void;
+}) {
   const [events, setEvents] = useState<EventItem[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -295,6 +300,23 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
         <div className="upcoming-count">
           Upcoming: {events.length === 0 ? '—' : `${events.length} events`}
         </div>
+        {/* Mobile Parking Widget */}
+        {parking !== undefined && setParking && (
+          <div className="parking-mobile">
+            <button 
+              className={`parking-btn ${parking === 'P2' ? 'active' : ''}`}
+              onClick={() => setParking('P2')}
+            >
+              P2
+            </button>
+            <button 
+              className={`parking-btn ${parking === 'P3' ? 'active' : ''}`}
+              onClick={() => setParking('P3')}
+            >
+              P3
+            </button>
+          </div>
+        )}
         <div className="calendar-actions">
           <button className="btn" onClick={() => fetchCalendar()} disabled={loading}>{loading ? 'Refreshing...' : 'Refresh'}</button>
         </div>
@@ -532,126 +554,7 @@ export default function CalendarView({ selectedDate: selectedKey, onSelectDate }
         </div>
       )}
 
-      {view === 'day' && (
-        <div className="single-day-view">
-          <h3>Day: {selectedDate.toDateString()}</h3>
-          
-          <div className="day-detail">
-            <section className="day-events">
-              <h4>Appointments</h4>
-              {eventsForDay(selectedDate).length === 0 && <div>No appointments</div>}
-              {eventsForDay(selectedDate).map((ev) => (
-                <div key={ev.id} className="event-row">
-                  <strong>{ev.title}</strong>
-                  <div className="time">{ev.start.toLocaleTimeString()} - {ev.end.toLocaleTimeString()}</div>
-                  <div className="desc">{ev.description}</div>
-                </div>
-              ))}
-            </section>
 
-            <section className="day-todos">
-              <h4>To-dos</h4>
-              
-              <div className="add-todo-inline">
-                <input 
-                  type="text" 
-                  placeholder="Add todo for this day..." 
-                  value={newTodoText}
-                  onChange={(e) => setNewTodoText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      addTodoForDay()
-                    }
-                  }}
-                />
-                <select value={newTodoOwner} onChange={(e) => setNewTodoOwner(e.target.value)}>
-                  <option value="Emily">Em</option>
-                  <option value="Steph">Steph</option>
-                  <option value="Maisie">Maisie</option>
-                </select>
-                <button className="btn" onClick={addTodoForDay} disabled={!newTodoText.trim()}>
-                  Add
-                </button>
-              </div>
-
-              {todosForDay(selectedDate).length === 0 && <div>No todos</div>}
-              {todosForDay(selectedDate).map((t:any)=> (
-                <div key={t.id} className="todo-row">
-                  <input type="checkbox" checked={t.done} onChange={() => { const todos = getTodos().map((x:any)=> x.id===t.id?{...x,done:!x.done, status: (!x.done? 'done':'todo')} : x); localStorage.setItem('todos', JSON.stringify(todos)); window.dispatchEvent(new CustomEvent('todos-updated')) }} />
-                  <span className={`todo-title ${t.done? 'done':''}`}>{t.title}</span>
-                  <small>Due: {t.date|| '—'}</small>
-                </div>
-              ))}
-            </section>
-
-            <section className="day-meal-edit">
-              <h4>Meal</h4>
-              <div className="meal-controls">
-                <select value={mealChoice} onChange={(e)=>{
-                  const val = e.target.value
-                  setMealChoice(val)
-                  // apply to selected day only
-                  const meals = JSON.parse(localStorage.getItem('meals')||'[]')
-                  const key = selectedDate.toISOString().slice(0,10)
-                  const idx = meals.findIndex((m:any)=>m.date===key)
-                  if (idx>=0) { meals[idx].title = val; } else { meals.push({ id: Date.now().toString(), date: key, title: val, groceries: [] }) }
-                  localStorage.setItem('meals', JSON.stringify(meals))
-                  window.dispatchEvent(new CustomEvent('meals-updated'))
-                }}>
-                  {availableMealTitles.map((t: string) => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <button className="btn btn-ghost" onClick={() => {
-                  if (!multiOpen) {
-                    // open panel and preselect current day
-                    const key = toKey(selectedDate)
-                    setMultiSelected({ [key]: true })
-                    setMultiOpen(true)
-                  } else {
-                    // confirm apply to selected days, then close
-                    const meals = JSON.parse(localStorage.getItem('meals')||'[]')
-                    const keys = Object.keys(multiSelected).filter(k => multiSelected[k])
-                    const now = Date.now().toString()
-                    keys.forEach((k, i) => {
-                      const idx = meals.findIndex((m:any)=>m.date===k)
-                      if (idx>=0) { meals[idx].title = mealChoice } else { meals.push({ id: now + i, date: k, title: mealChoice, groceries: [] }) }
-                    })
-                    localStorage.setItem('meals', JSON.stringify(meals))
-                    window.dispatchEvent(new CustomEvent('meals-updated'))
-                    setMultiOpen(false)
-                  }
-                }}>{multiOpen ? 'Confirm apply' : 'Apply to multiple days'}</button>
-              </div>
-              {multiOpen && (
-                <div className="multi-apply-panel">
-                  <div className="select-all">
-                    <label><input type="checkbox" checked={weekDates(selectedDate).every(d => multiSelected[toKey(d)])} onChange={(e)=>{
-                      const checked = e.currentTarget.checked
-                      const obj: Record<string,boolean> = {}
-                      weekDates(selectedDate).forEach(d => obj[toKey(d)] = checked)
-                      setMultiSelected(obj)
-                    }} /> Select all (this week)</label>
-                  </div>
-                  <div className="week-checkboxes">
-                    {weekDates(selectedDate).map((d, idx) => (
-                      <label key={toKey(d)} className="week-day">
-                        <input type="checkbox" checked={!!multiSelected[toKey(d)]} onChange={(e)=>{
-                          const key = toKey(d)
-                          setMultiSelected(s => ({ ...s, [key]: e.currentTarget.checked }))
-                        }} />
-                        <span className="wd-name">{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][idx]}</span>
-                        <span className="wd-date">{d.getMonth()+1}/{d.getDate()}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="meal-ingredients">
-                Ingredients: {(() => { const m = JSON.parse(localStorage.getItem('meals')||'[]').find((mm:any)=>mm.date===selectedDate.toISOString().slice(0,10)); return m && m.groceries ? m.groceries.join(', ') : 'None' })()}
-              </div>
-            </section>
-          </div>
-        </div>
-      )}
 
       {fetchError && (
         <div className="calendar-fetch-error">

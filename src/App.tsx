@@ -144,7 +144,7 @@ export default function App() {
             ) : (
               <>
                 <section className="calendar-col">
-                  <CalendarView selectedDate={selectedDate} onSelectDate={handleSelectDate} />
+                  <CalendarView selectedDate={selectedDate} onSelectDate={handleSelectDate} parking={parking} setParking={setParking} />
                 </section>
 
                 {/* Icon-based Sidebar for Desktop/Tablet */}

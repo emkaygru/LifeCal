@@ -70,12 +70,16 @@ body{font-family: Inter, system-ui, -apple-system, 'Helvetica Neue', Arial; marg
 @media (max-width: 768px) {
   .calendar-col {
     min-width: 100%;
+    width: 100%;
     padding: 8px;
-    max-height: calc(100vh - 120px);
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
   }
   
   .calendar {
     padding: 8px;
+    height: auto;
   }
   
   .calendar-header {
@@ -2793,8 +2797,11 @@ button.btn + button.btn { margin-left: 8px }
   }
   
   .dashboard {
+    height: auto;
     min-height: calc(100vh - 80px);
     overflow-x: hidden;
+    overflow-y: auto;
+    padding: 8px 0;
   }
   
   .topbar {
