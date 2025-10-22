@@ -159,43 +159,66 @@ export default function App() {
           <main className={`app-layout ${viewMode}`}>
             {currentPage === 'dashboard' ? (
               <Dashboard parking={parking} setParking={setParking} />
-            ) : (
+            ) : viewMode === 'live' ? (
+              // LIVE MODE: Main HomeView (left) + Right sidebar with editing icons
               <>
-                {/* Left Sidebar - always visible with icons */}
-                <LeftSidebar parking={parking} />
-
-                {/* Main Content Area */}
-                <section className={`main-content ${viewMode}`}>
-                  {viewMode === 'live' ? (
-                    <HomeView 
-                      selectedDate={selectedDate} 
-                      onSelectDate={handleSelectDate} 
-                      parking={parking} 
-                      setParking={setParking}
-                    />
-                  ) : (
-                    <div className="compressed-home">
-                      {/* Compressed view for edit mode - implement later */}
-                      <div className="mode-indicator">Edit Mode Active</div>
-                    </div>
-                  )}
+                <section className="main-content-live">
+                  <HomeView 
+                    selectedDate={selectedDate} 
+                    onSelectDate={handleSelectDate} 
+                    parking={parking} 
+                    setParking={setParking}
+                  />
                 </section>
 
-                {/* Mode Toggle Button */}
-                <button className="mode-toggle-btn" onClick={toggleViewMode}>
-                  {viewMode === 'live' ? '→' : '←'}
-                </button>
+                {/* Right Sidebar - Editing Icons */}
+                <aside className="sidebar-right">
+                  <div className="sidebar-icons">
+                    <button className="sidebar-icon" title="Meal Planning">🍽️</button>
+                    <button className="sidebar-icon" title="Grocery Lists">🛒</button>
+                    <button className="sidebar-icon" title="Maisie's Log">🐕</button>
+                    <button className="sidebar-icon" title="Lists">📋</button>
+                    
+                    {/* Parking Status */}
+                    <div className="parking-status">
+                      {parking ? (
+                        <div className={`parking-selected parking-${parking.toLowerCase()}`}>
+                          {parking}
+                        </div>
+                      ) : (
+                        <button className="sidebar-icon" title="Parking">🚗</button>
+                      )}
+                    </div>
+                  </div>
+                </aside>
+              </>
+            ) : (
+              // EDIT MODE: Left sidebar with nav icons + Right area with full editing cards  
+              <>
+                {/* Left Sidebar - Navigation Icons */}
+                <aside className="sidebar-left">
+                  <div className="sidebar-icons">
+                    <button className="sidebar-icon active" title="Calendar">📅</button>
+                    <button className="sidebar-icon" title="Todos">✅</button>  
+                    <button className="sidebar-icon" title="Lists">📝</button>
+                  </div>
+                </aside>
 
-                {/* Right Edit Panel - visible in edit mode */}
-                {viewMode === 'edit' && (
+                {/* Right Content Area - Full Editing Cards */}
+                <section className="edit-content-area">
                   <EditPanel 
                     selectedDate={selectedDate}
                     parking={parking}
                     setParking={setParking}
                   />
-                )}
+                </section>
               </>
             )}
+
+            {/* Mode Toggle Button */}
+            <button className="mode-toggle-btn" onClick={toggleViewMode}>
+              {viewMode === 'live' ? '←' : '→'}
+            </button>
           </main>
 
           {/* Enhanced Mobile Floating Action Button - only show on calendar page */}
