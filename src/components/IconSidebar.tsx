@@ -5,9 +5,10 @@ interface IconSidebarProps {
   selectedDate: string | null
   parking: string | null
   setParking: (parking: string | null) => void
+  sidebarState?: 'closed' | 'narrow' | 'expanded'
 }
 
-export default function IconSidebar({ selectedDate, parking, setParking }: IconSidebarProps) {
+export default function IconSidebar({ selectedDate, parking, setParking, sidebarState = 'narrow' }: IconSidebarProps) {
   const [activePanel, setActivePanel] = useState<string | null>(null)
 
   const togglePanel = (panel: string) => {
@@ -15,56 +16,124 @@ export default function IconSidebar({ selectedDate, parking, setParking }: IconS
   }
 
   return (
-    <div className="icon-sidebar">
+    <div className={`icon-sidebar ${sidebarState}`}>
       {/* Sidebar Icons */}
-      <div className="sidebar-icons">
-        <button 
-          className={`sidebar-icon ${activePanel === 'meals' ? 'active' : ''}`}
-          onClick={() => togglePanel('meals')}
-          title="Meal Planner"
-        >
-          🍽️
-        </button>
-        
-        <button 
-          className={`sidebar-icon ${activePanel === 'todos' ? 'active' : ''}`}
-          onClick={() => togglePanel('todos')}
-          title="Todos"
-        >
-          ☑️
-        </button>
-        
-        <button 
-          className={`sidebar-icon ${activePanel === 'grocery' ? 'active' : ''}`}
-          onClick={() => togglePanel('grocery')}
-          title="Grocery List"
-        >
-          🥛
-        </button>
+      <div className={`sidebar-icons ${sidebarState === 'expanded' ? 'expanded-layout' : 'narrow-layout'}`}>
+        {sidebarState === 'expanded' ? (
+          // Expanded layout: Card-style buttons with labels
+          <>
+            <div className="sidebar-card">
+              <button 
+                className={`sidebar-card-btn ${activePanel === 'meals' ? 'active' : ''}`}
+                onClick={() => togglePanel('meals')}
+              >
+                <span className="card-icon">🍽️</span>
+                <span className="card-label">Meal Planner</span>
+              </button>
+            </div>
+            
+            <div className="sidebar-card">
+              <button 
+                className={`sidebar-card-btn ${activePanel === 'todos' ? 'active' : ''}`}
+                onClick={() => togglePanel('todos')}
+              >
+                <span className="card-icon">☑️</span>
+                <span className="card-label">Todos</span>
+              </button>
+            </div>
+            
+            <div className="sidebar-card">
+              <button 
+                className={`sidebar-card-btn ${activePanel === 'grocery' ? 'active' : ''}`}
+                onClick={() => togglePanel('grocery')}
+              >
+                <span className="card-icon">🥛</span>
+                <span className="card-label">Grocery List</span>
+              </button>
+            </div>
+            
+            <div className="sidebar-card">
+              <button 
+                className={`sidebar-card-btn ${activePanel === 'puppy' ? 'active' : ''}`}
+                onClick={() => togglePanel('puppy')}
+              >
+                <span className="card-icon">🐕</span>
+                <span className="card-label">Maisie's Log</span>
+              </button>
+            </div>
+            
+            <div className="sidebar-card">
+              <button 
+                className={`sidebar-card-btn ${activePanel === 'notes' ? 'active' : ''}`}
+                onClick={() => togglePanel('notes')}
+              >
+                <span className="card-icon">📝</span>
+                <span className="card-label">Quick Notes</span>
+              </button>
+            </div>
+            
+            <div className="sidebar-card">
+              <button 
+                className={`sidebar-card-btn ${activePanel === 'parking' ? 'active' : ''}`}
+                onClick={() => togglePanel('parking')}
+              >
+                <span className="card-icon">🚗</span>
+                <span className="card-label">Parking</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          // Narrow layout: Original icon buttons
+          <>
+            <button 
+              className={`sidebar-icon ${activePanel === 'meals' ? 'active' : ''}`}
+              onClick={() => togglePanel('meals')}
+              title="Meal Planner"
+            >
+              🍽️
+            </button>
+            
+            <button 
+              className={`sidebar-icon ${activePanel === 'todos' ? 'active' : ''}`}
+              onClick={() => togglePanel('todos')}
+              title="Todos"
+            >
+              ☑️
+            </button>
+            
+            <button 
+              className={`sidebar-icon ${activePanel === 'grocery' ? 'active' : ''}`}
+              onClick={() => togglePanel('grocery')}
+              title="Grocery List"
+            >
+              🥛
+            </button>
 
-        <button 
-          className={`sidebar-icon ${activePanel === 'puppy' ? 'active' : ''}`}
-          onClick={() => togglePanel('puppy')}
-          title="Maisie's Log"
-        >
-          🐕
-        </button>
+            <button 
+              className={`sidebar-icon ${activePanel === 'puppy' ? 'active' : ''}`}
+              onClick={() => togglePanel('puppy')}
+              title="Maisie's Log"
+            >
+              🐕
+            </button>
 
-        <button 
-          className={`sidebar-icon ${activePanel === 'notes' ? 'active' : ''}`}
-          onClick={() => togglePanel('notes')}
-          title="Quick Notes"
-        >
-          📝
-        </button>
+            <button 
+              className={`sidebar-icon ${activePanel === 'notes' ? 'active' : ''}`}
+              onClick={() => togglePanel('notes')}
+              title="Quick Notes"
+            >
+              📝
+            </button>
 
-        <button 
-          className={`sidebar-icon ${activePanel === 'parking' ? 'active' : ''}`}
-          onClick={() => togglePanel('parking')}
-          title="Parking"
-        >
-          🚗
-        </button>
+            <button 
+              className={`sidebar-icon ${activePanel === 'parking' ? 'active' : ''}`}
+              onClick={() => togglePanel('parking')}
+              title="Parking"
+            >
+              🚗
+            </button>
+          </>
+        )}
       </div>
 
       {/* Collapsible Panels */}
