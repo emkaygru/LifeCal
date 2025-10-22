@@ -3,6 +3,7 @@ import MealPopup from './MealPopup'
 import TodoPopup from './TodoPopup'
 import StickerPopup from './StickerPopup'
 import GroceryPopup from './GroceryPopup'
+import PuppyLog from './PuppyLog'
 
 interface EnhancedFABProps {
   selectedDate: string | null
@@ -16,6 +17,7 @@ export default function EnhancedFAB({ selectedDate }: EnhancedFABProps) {
   const options = [
     { type: 'meal', icon: '🍽️', label: 'Meal' },
     { type: 'todo', icon: '📝', label: 'Todo' },
+    { type: 'puppy', icon: '🐕', label: 'Maisie' },
     { type: 'sticker', icon: '✨', label: 'Sticker' },
     { type: 'grocery', icon: '🛒', label: 'Grocery' }
   ]
@@ -100,6 +102,7 @@ export default function EnhancedFAB({ selectedDate }: EnhancedFABProps) {
       {/* Popups */}
       {activePopup === 'meal' && <MealPopup onClose={closePopup} selectedDate={selectedDate} />}
       {activePopup === 'todo' && <TodoPopup onClose={closePopup} selectedDate={selectedDate} />}
+      {activePopup === 'puppy' && <PuppyLog onClose={closePopup} />}
       {activePopup === 'sticker' && <StickerPopup onClose={closePopup} selectedDate={selectedDate} />}
       {activePopup === 'grocery' && <GroceryPopup onClose={closePopup} selectedDate={selectedDate} />}
     </>

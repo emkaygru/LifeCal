@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import PuppyLog from './PuppyLog'
 
 interface IconSidebarProps {
   selectedDate: string | null
@@ -39,6 +40,14 @@ export default function IconSidebar({ selectedDate, parking, setParking }: IconS
           title="Grocery List"
         >
           🥛
+        </button>
+
+        <button 
+          className={`sidebar-icon ${activePanel === 'puppy' ? 'active' : ''}`}
+          onClick={() => togglePanel('puppy')}
+          title="Maisie's Log"
+        >
+          🐕
         </button>
 
         <button 
@@ -139,6 +148,12 @@ export default function IconSidebar({ selectedDate, parking, setParking }: IconS
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {activePanel === 'puppy' && (
+        <div className="sidebar-panel">
+          <PuppyLog onClose={() => setActivePanel(null)} />
         </div>
       )}
 

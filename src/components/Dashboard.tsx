@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { getPuppyStats } from '../lib/puppyLog'
 
 interface WeatherData {
   temperature: number
@@ -32,6 +33,7 @@ export default function Dashboard({ parking, setParking }: DashboardProps) {
   const [todos, setTodos] = useState<TodoData[]>([])
   const [todaysEvents, setTodaysEvents] = useState<Event[]>([])
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [puppyStats, setPuppyStats] = useState(getPuppyStats())
 
   // Load weather data for Denver
   useEffect(() => {
@@ -78,6 +80,15 @@ export default function Dashboard({ parking, setParking }: DashboardProps) {
     const handleTodosUpdate = () => loadTodos()
     window.addEventListener('todos-updated', handleTodosUpdate)
     return () => window.removeEventListener('todos-updated', handleTodosUpdate)
+  }, [])
+
+  // Load puppy stats and listen for updates
+  useEffect(() => {
+    const updatePuppyStats = () => setPuppyStats(getPuppyStats())
+    
+    updatePuppyStats()
+    window.addEventListener('puppy-log-updated', updatePuppyStats)
+    return () => window.removeEventListener('puppy-log-updated', updatePuppyStats)
   }, [])
 
   // Load today's events
@@ -238,8 +249,33 @@ export default function Dashboard({ parking, setParking }: DashboardProps) {
           </div>
 
           <div className="todo-column">
-            <h3>👶 Maisie</h3>
+            <h3>� Maisie</h3>
             <div className="todo-list">
+              {/* Last Potty Info */}
+              <div className="puppy-status">
+                <div className="last-potty">
+                  <span className="potty-label">Last potty:</span>
+                  <span className="potty-time">
+                    {puppyStats.lastPotty 
+                      ? (() => {
+                          const now = new Date()
+                          const diff = now.getTime() - puppyStats.lastPotty.getTime()
+                          const hours = Math.floor(diff / (1000 * 60 * 60))
+                          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+                          
+                          if (hours > 0) {
+                            return `${hours}h ${minutes}m ago`
+                          } else {
+                            return `${minutes}m ago`
+                          }
+                        })()
+                      : 'Never logged'
+                    }
+                  </span>
+                </div>
+              </div>
+              
+              {/* Regular Todos */}
               {getUserTodos('Maisie').map(todo => (
                 <div key={todo.id} className="todo-item">
                   <span>{todo.text}</span>
