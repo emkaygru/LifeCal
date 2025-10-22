@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import CalendarView from './components/CalendarView'
 import Dashboard from './components/Dashboard'
 import IdleSlideshow from './components/IdleSlideshow'
+import HomeView from './components/HomeView'
 import TodoAccordion from './components/TodoAccordion'
 import DrawingPad from './components/DrawingPad'
 import GroceryList from './components/GroceryList'
@@ -144,7 +145,7 @@ export default function App() {
             ) : (
               <>
                 <section className="calendar-col">
-                  <CalendarView selectedDate={selectedDate} onSelectDate={handleSelectDate} parking={parking} setParking={setParking} />
+                  <HomeView selectedDate={selectedDate} onSelectDate={handleSelectDate} parking={parking} setParking={setParking} />
                 </section>
 
                 {/* Icon-based Sidebar for Desktop/Tablet */}
